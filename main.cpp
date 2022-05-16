@@ -3,7 +3,7 @@
 
 MPI_Datatype MPI_PACKET_T;
 
-Data data;
+Data mainData;
 
 pthread_mutex_t stateMutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -68,7 +68,7 @@ void initApp(int *argc, char ***argv) {
 
 //    srand(time(NULL) * rank);
     srand(rank);
-    data.init(rank, size);
+    mainData.init(rank, size);
     
     sleep(1);
     if (DEBUG) println("Application ready");
@@ -80,10 +80,10 @@ void finalizeApp() {
 }
 
 void incLamportTime(int received) {
-    if (received > data.lamportTime)
-        data.lamportTime = received + 1;
+    if (received > mainData.lamportTime)
+        mainData.lamportTime = received + 1;
     else
-        data.lamportTime++;INT
+        mainData.lamportTime++;
 }
 
 int main(int argc, char **argv) {

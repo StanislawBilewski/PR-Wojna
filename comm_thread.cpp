@@ -1,5 +1,6 @@
 #include "comm_thread.h"
 #include "main.h"
+#include "main_thread.h"
 #include "structures.h"
 
 void *comLoop(void *ptr) {

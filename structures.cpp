@@ -1,4 +1,5 @@
 #include "structures.h"
+#include "main_thread.h"
 #include "main.h"
 #include <stdio.h>
 #include <math.h>
@@ -67,6 +68,7 @@ void Data::lookForDock() {
         }
 
         unlockMutex();
+        checkState();
 
     } else {
          unlockMutex();
@@ -128,29 +130,7 @@ void Data::lookForMechanic() {
             // zmiana stanu statku
             mainData.state = State::IN_REPAIR;
 
-            // przebywanie w naprawie
-            sleep(1);
-
-            // zmiana stanu statku
-            mainData.state = State::FIGHTING;
-
-            // wysyłanie RELEASE_M i RELEASE_D
-            packet->lamportTime = lamportTime;
-            packet->docking = 0;
-            packet->mechanics = 0;
-
-            println("[%d] I'm leaving the dock", mainData.rank);
-            if (DEBUG) {
-                println("send RELEASE_M(time = %d) to ALL", packet->lamportTime);
-                println("send RELEASE_D(time = %d) to ALL", packet->lamportTime);
-            }
-
-            for (int i = 0; i < mainData.size; i++) {
-                if (i != mainData.rank) {
-                    MPI_Send(packet, 1, MPI_PACKET_T, i, Message::RELEASE_M, MPI_COMM_WORLD);
-                    MPI_Send(packet, 1, MPI_PACKET_T, i, Message::RELEASE_D, MPI_COMM_WORLD);
-                }
-            }
+            checkState();
         }
         unlockMutex();
     } else {

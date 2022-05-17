@@ -4,71 +4,90 @@
 
 void mainLoop() {
     if (DEBUG) println("Hello");
+    checkState();
+}
 
-    // tą pętle while by trzeba wywalić ale to wtedy by trzeba
-    // wywoływać przejścia do kolejnych stanow w inny sposob niz switchem
-    // na przykład funkcję zrobić czy coś
-    // TODO: pozbyć się tej pętli i sterować wiadomościami
-    while (true) {
-        switch (mainData.state) {
-            case State::FIGHTING:
-                int perc;
-                perc = rand() % 100;
-                if (perc < HIT_PROB) {
-                    // statek otrzymuje losowe obrażenia
-                    int lamportTime;
-                    int dmg = (rand() % (MAX_DMG - MIN_DMG + 1)) + MIN_DMG;
+void checkState(){
+    switch (mainData.state) {
+        case State::FIGHTING:
+            int perc;
+            perc = rand() % 100;
+            if (perc < HIT_PROB) {
+                // statek otrzymuje losowe obrażenia
+                int lamportTime;
+                int dmg = (rand() % (MAX_DMG - MIN_DMG + 1)) + MIN_DMG;
 
-                    lockMutex();
-                    mainData.dmg = dmg;
-                    // zmiana stanu statku
-                    mainData.state = State::WAITING_DOCK;
+                lockMutex();
+                mainData.dmg = dmg;
+                // zmiana stanu statku
+                mainData.state = State::WAITING_DOCK;
 
-                    // zerowanie listy ACK_D
-                    mainData.ackDList.resize(mainData.size, false);
-                    mainData.ackDList[mainData.rank] = true;
+                // zerowanie listy ACK_D
+                mainData.ackDList.resize(mainData.size, false);
+                mainData.ackDList[mainData.rank] = true;
 
-                    // zerowanie listy zajmowanych doków
-                    mainData.shipDocks.resize(mainData.size, false);
+                // zerowanie listy zajmowanych doków
+                mainData.shipDocks.resize(mainData.size, false);
 
-                    // inkrementacja wartości zegaru lamporta (przed wysyłaniem)
-                    incLamportTime(LAMPORT_DEF);
-                    lamportTime = mainData.lamportTime;
+                // inkrementacja wartości zegaru lamporta (przed wysyłaniem)
+                incLamportTime(LAMPORT_DEF);
+                lamportTime = mainData.lamportTime;
 
-                    unlockMutex();
+                unlockMutex();
 
-                    // wysyła REQ_D do wszystkich (poza samym sobą)
-                    packet_t *packet = (packet_t *) malloc(sizeof(packet_t));
-                    packet->lamportTime = lamportTime;
-                    packet->mechanics = 0;
-                    packet->docking = 0;
+                // wysyła REQ_D do wszystkich (poza samym sobą)
+                packet_t *packet = (packet_t *) malloc(sizeof(packet_t));
+                packet->lamportTime = lamportTime;
+                packet->mechanics = 0;
+                packet->docking = 0;
 
-                    println("[%d] I want to dock", mainData.rank);
-                    if (DEBUG) println("send REQ_D(time = %d) to ALL", packet->lamportTime);
+                println("[%d] I want to dock", mainData.rank);
+                if (DEBUG) println("send REQ_D(time = %d) to ALL", packet->lamportTime);
 
-                    for (int i = 0; i < mainData.size; i++) {
-                        if (i != mainData.rank)
-                            MPI_Send(packet, 1, MPI_PACKET_T, i, Message::REQ_D, MPI_COMM_WORLD);
-                    }
+                for (int i = 0; i < mainData.size; i++) {
+                    if (i != mainData.rank)
+                        MPI_Send(packet, 1, MPI_PACKET_T, i, Message::REQ_D, MPI_COMM_WORLD);
                 }
+            }
+            checkState();
 
-                break;
+            break;
 
-            case State::WAITING_DOCK:
-                mainData.lookForDock();
+        case State::WAITING_DOCK:
+            mainData.lookForDock();
 
-                break;
+            break;
 
-            case State::WAITING_MECHANIC:
-                mainData.lookForMechanic();
+        case State::WAITING_MECHANIC:
+            mainData.lookForMechanic();
 
-                break;
+            break;
 
-            case State::IN_REPAIR:
+        case State::IN_REPAIR:
+            // przebywanie w naprawie
+            sleep(1);
 
-                break;
+            // zmiana stanu statku
+            mainData.state = State::FIGHTING;
 
-            sleep(WAITING_TIME);
-        }
+            // wysyłanie RELEASE_M i RELEASE_D
+            packet->lamportTime = lamportTime;
+            packet->docking = 0;
+            packet->mechanics = 0;
+
+            println("[%d] I'm leaving the dock", mainData.rank);
+            if (DEBUG) {
+                println("send RELEASE_M(time = %d) to ALL", packet->lamportTime);
+                println("send RELEASE_D(time = %d) to ALL", packet->lamportTime);
+            }
+
+            for (int i = 0; i < mainData.size; i++) {
+                if (i != mainData.rank) {
+                    MPI_Send(packet, 1, MPI_PACKET_T, i, Message::RELEASE_M, MPI_COMM_WORLD);
+                    MPI_Send(packet, 1, MPI_PACKET_T, i, Message::RELEASE_D, MPI_COMM_WORLD);
+                }
+            }
+            checkState();
+            break;
     }
 }

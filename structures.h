@@ -39,14 +39,15 @@ enum Message {
 
 class Data {
 public:
-    State state;                    // obecny stan statku
+    State state;                         // obecny stan statku
     int rank, size;
-    int lamportTime;                // lokalny czas lamporta
-    int dmg;                        // liczba otrzymanych punktów obrażeń
-    vector<bool> ackDList;          // vector otrzymanych wiadomości ACK_D
-    vector<bool> ackMList;          // vector otrzymanych wiadomości ACK_M
-    vector<bool> shipDocks;         // vector zajętych doków
-    vector<int> shipMechanics;      // vector zajętych mechaników
+    int lamportTime;                     // lokalny czas lamporta
+    int dmg;                             // liczba otrzymanych punktów obrażeń
+    vector<bool> ackDList;               // vector otrzymanych wiadomości ACK_D
+    vector<bool> ackMList;               // vector otrzymanych wiadomości ACK_M
+    vector<bool> shipDocks;              // vector zajętych doków
+    vector<int> shipMechanics;           // vector zajętych mechaników
+    vector<int[2]> requestQueue;         // kolejka oczekujących żądań (ranga, priorytet)
 
     void init(int rank, int size);
     bool isAckDFromAll();

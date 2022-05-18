@@ -8,5 +8,6 @@
 #include "main.h"
 
 void *comLoop(void *ptr);
+bool checkPriority(int);
 
 #endif

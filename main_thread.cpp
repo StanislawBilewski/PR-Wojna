@@ -45,6 +45,11 @@ void checkState(){
                 println("[%d] I want to dock", mainData.rank);
                 if (DEBUG) println("send REQ_D(time = %d) to ALL", packet->lamportTime);
 
+                // zapisuje żądanie w kolejce
+                lockMutex();
+                mainData.requestQueue.push_back({mainData.rank, lamportTime});
+                unlockMutex();
+
                 for (int i = 0; i < mainData.size; i++) {
                     if (i != mainData.rank)
                         MPI_Send(packet, 1, MPI_PACKET_T, i, Message::REQ_D, MPI_COMM_WORLD);

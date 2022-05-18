@@ -1,6 +1,6 @@
 #ifndef STRUCTURESH
 #define STRUCTURESH
-
+#pragma once
 #include <vector>
 
 #include "constants.h"

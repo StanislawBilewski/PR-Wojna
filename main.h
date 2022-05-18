@@ -1,11 +1,13 @@
 #ifndef GLOBALH
 #define GLOBALH
 
+#pragma once
 #include <mpi.h>
 #include <vector>
 #include <pthread.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <cstdlib>
 
 #include "constants.h"
 #include "structures.h"

@@ -1,3 +1,4 @@
+#pragma once
 #include "main_thread.h"
 #include "main.h"
 #include "structures.h"
@@ -66,11 +67,19 @@ void checkState(){
         case State::IN_REPAIR:
             // przebywanie w naprawie
             sleep(1);
+            int lamportTime;
+            
+            lockMutex();
 
-            // zmiana stanu statku
-            mainData.state = State::FIGHTING;
+                // zmiana stanu statku
+                mainData.state = State::FIGHTING;
 
+                lamportTime = mainData.lamportTime;
+
+            unlockMutex();
+            
             // wysyłanie RELEASE_M i RELEASE_D
+            packet_t *packet = (packet_t *) malloc(sizeof(packet_t));
             packet->lamportTime = lamportTime;
             packet->docking = 0;
             packet->mechanics = 0;

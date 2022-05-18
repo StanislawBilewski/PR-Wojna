@@ -1,5 +1,8 @@
 #include "main.h"
 #include "main_thread.h"
+#include "main_thread.cpp"
+#include "comm_thread.cpp"
+#include "structures.cpp"
 
 MPI_Datatype MPI_PACKET_T;
 

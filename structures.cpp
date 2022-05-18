@@ -1,13 +1,14 @@
+#pragma once
 #include "structures.h"
 #include "main_thread.h"
 #include "main.h"
 #include <stdio.h>
 #include <math.h>
 
-Process::Process(int rank, int requestTime) {
-    this->rank = rank;
-    this->requestTime = requestTime;
-}
+// Process::Process(int rank, int requestTime) {
+//     this->rank = rank;
+//     this->requestTime = requestTime;
+// }
 
 void Data::init(int rank, int size) {
     this->state = State::FIGHTING;

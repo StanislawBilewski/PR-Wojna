@@ -1,4 +1,5 @@
 #include "structures.h"
+#include "main_thread.h"
 #include "main.h"
 #include <stdio.h>
 #include <math.h>
@@ -27,12 +28,51 @@ bool Data::isAckDFromAll() {
     return true;
 }
 
-bool Data::isAckMFromAll() {
-    for (int i = 0; i < this->ackMList.size(); i++) {
-        if (!this->ackMList[i])
-            return false;
+void Data::lookForDock() {
+    lockMutex();
+    if (isAckDFromAll()) {
+        int lamportTime;
+        // inkrementacja zegara lamporta
+        incLamportTime(LAMPORT_DEF);
+        lamportTime = mainData.lamportTime;
+
+        unlockMutex();
+
+        // wysyłanie ACK_D do oczekujących procesów
+        packet_t *packet = (packet_t*)malloc(sizeof(packet_t));
+        packet->lamportTime = lamportTime;
+        packet->docking = 1;
+        packet->mechanics = 0;
+        //TODO: wysyłanie ACK_D do wszystkich z kolejki oczekujących
+
+        lockMutex();
+
+        // zmiana stanu statku
+        mainData.state = State::WAITING_MECHANIC;
+
+        // zerowanie listy zajętych mechaników
+        mainData.shipMechanics.resize(mainData.size, 0);
+
+        // zerowanie listy ACK_M
+        mainData.ackMList.resize(mainData.size, false);
+        mainData.ackMList[mainData.rank] = true;
+
+        // inkrementacja wartości zegaru lamporta (przed wysyłaniem)
+        incLamportTime(LAMPORT_DEF);
+        lamportTime = mainData.lamportTime;
+
+        // wysyła REQ_M do wszystkich (poza samym sobą)
+        for (int i = 0; i < mainData.size; i++) {
+            if (i != mainData.rank)
+                MPI_Send(packet, 1, MPI_PACKET_T, i, Message::REQ_M, MPI_COMM_WORLD);
+        }
+
+        unlockMutex();
+        checkState();
+
+    } else {
+         unlockMutex();
     }
-    return true;
 }
 
 int Data::sumMechanics() {
@@ -45,23 +85,56 @@ int Data::sumMechanics() {
 }
 
 int Data::mechanicsNeeded() {
-    float a = (MECHANICS - 1) / ((float)MAX_DMG - MIN_DMG)
-    float b = 1 - a*MIN_DMG 
+    float a = (MECHANICS - 1) / ((float)MAX_DMG - MIN_DMG);
+    float b = 1 - a*MIN_DMG;
 
     return (int) floor((float) this->dmg * a + b);
 }
 
-void Data::checkMechanics(){
-    if(mechanicsNeeded() <= MECHANICS - sumMechanics()){
-        int lamportTime;
+bool Data::checkMechanics(int needed){
+    if(needed <= MECHANICS - sumMechanics()){
         // UWAGA! MUTEX WCIĄŻ ZABLOKOWANY!
-        data.state = State::IN_REPAIR;
-    }
-    else{
-        MPI_Status status;
-        packet_t packet;
-        MPI_Recv(&packet, 1, MPI_PACKET_T, MPI_ANY_SOURCE, Message::RELEASE_M, MPI_COMM_WORLD, &status);
+        return true;
+    }else return false;
+}
 
-        checkMechanics();
+bool Data::isAckMFromAll() {
+    for (int i = 0; i < this->ackMList.size(); i++) {
+        if (!this->ackMList[i])
+            return false;
+    }
+    return true;
+}
+
+void Data::lookForMechanic() {
+    lockMutex();
+    int mechanics = mechanicsNeeded();
+    if (isAckMFromAll()) {
+        if(checkMechanics(mechanics)){
+            int lamportTime;
+            // inkrementacja zegara lamporta
+            incLamportTime(LAMPORT_DEF);
+            lamportTime = mainData.lamportTime;
+
+            unlockMutex();
+
+            // wysyłanie ACK_M do oczekujących procesów
+            packet_t *packet = (packet_t*)malloc(sizeof(packet_t));
+            packet->lamportTime = lamportTime;
+            packet->docking = 1;
+            packet->mechanics = mechanics;
+            //TODO: wysyłanie ACK_M do wszystkich z kolejki oczekujących
+
+            lockMutex();
+
+            // zmiana stanu statku
+            mainData.state = State::IN_REPAIR;
+
+            checkState();
+        }
+        unlockMutex();
+    } else {
+        unlockMutex();
     }
 }
+

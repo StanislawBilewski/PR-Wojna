@@ -4,92 +4,90 @@
 
 void mainLoop() {
     if (DEBUG) println("Hello");
+    checkState();
+}
 
-    while(true) {
-        switch (data.state) {
-            case State::FIGHTING:
-                int perc = random() % 100;
-                if (perc < HIT_PROB) {
-                    // statek otrzymuje losowe obrażenia
-                    int lamportTime;
-                    int dmg = (rand() % (MAX_DMG - MIN_DMG + 1)) + MIN_DMG;
+void checkState(){
+    switch (mainData.state) {
+        case State::FIGHTING:
+            int perc;
+            perc = rand() % 100;
+            if (perc < HIT_PROB) {
+                // statek otrzymuje losowe obrażenia
+                int lamportTime;
+                int dmg = (rand() % (MAX_DMG - MIN_DMG + 1)) + MIN_DMG;
 
-                    lockMutex();
-                        data->dmg = dmg;
-                        // zmiana stanu statku
-                        data.state = State::WAITING_DOCK;
-
-                        // zerowanie listy ACK_D
-                        data.ackDList.resize(data.size, false);
-                        data.ackDList[data.rank] = true;
-                        
-                        // zerowanie listy zajmowanych doków
-                        data.shipDocks.resize(data.size, false);
-
-                        // inkrementacja wartości zegaru lamporta (przed wysyłaniem)
-                        incLamportTime(LAMPORT_DEF);
-                        lamportTime = data.lamportTime;
-
-                    unlockMutex();
-
-                    packet_t *packet = (packet_t*)malloc(sizeof(packet_t));
-                    packet->lamportTime = lamportTime;
-                    packet->mechanics = 0;
-                    packet->docking = 0;
-
-                    println("[%d] I want to dock", rank);
-                    if (DEBUG) println("send REQ_D(time = %d) to ALL", packet->lamportTime);
-
-                    // wysyła REQ_D do wszystkich (poza samym sobą)
-                    for (int i = 0; i < data.size; i++) {
-                        if (i != data.rank)
-                            MPI_Send(packet, 1, MPI_PACKET_T, i, Message::REQ_D, MPI_COMM_WORLD);
-                    }
-
-                }
-
-                break;
-
-            case State::WAITING_DOCK:
                 lockMutex();
-                if (data.isAckDFromAll()) {
-                    int lamportTime;
-                    // UWAGA! MUTEX WCIĄŻ ZABLOKOWANY!
-                    data.state = State::WAITING_MECHANIC;
+                mainData.dmg = dmg;
+                // zmiana stanu statku
+                mainData.state = State::WAITING_DOCK;
 
-                    // // inkrementacja zegara lamporta
-                    // incLamportTime(LAMPORT_DEF);
-                    // lamportTime = data.lamportTime;
+                // zerowanie listy ACK_D
+                mainData.ackDList.resize(mainData.size, false);
+                mainData.ackDList[mainData.rank] = true;
 
-                    unlockMutex();
+                // zerowanie listy zajmowanych doków
+                mainData.shipDocks.resize(mainData.size, false);
 
-                    // packet_t *packet = (packet_t*)malloc(sizeof(packet_t));
-                    // packet->lamportTime = lamportTime;
-                    // packet->docking = 1;
-                    // // packet->mechanics = 0;
+                // inkrementacja wartości zegaru lamporta (przed wysyłaniem)
+                incLamportTime(LAMPORT_DEF);
+                lamportTime = mainData.lamportTime;
 
-                } else {
-                    unlockMutex();
+                unlockMutex();
+
+                // wysyła REQ_D do wszystkich (poza samym sobą)
+                packet_t *packet = (packet_t *) malloc(sizeof(packet_t));
+                packet->lamportTime = lamportTime;
+                packet->mechanics = 0;
+                packet->docking = 0;
+
+                println("[%d] I want to dock", mainData.rank);
+                if (DEBUG) println("send REQ_D(time = %d) to ALL", packet->lamportTime);
+
+                for (int i = 0; i < mainData.size; i++) {
+                    if (i != mainData.rank)
+                        MPI_Send(packet, 1, MPI_PACKET_T, i, Message::REQ_D, MPI_COMM_WORLD);
                 }
+            }
+            checkState();
 
-                break;
+            break;
 
-            case State::WAITING_MECHANIC:
-                lockMutex();
-                if (data.isAckMFromAll()){
-                    data.checkMechanics();
+        case State::WAITING_DOCK:
+            mainData.lookForDock();
 
-                    unlockMutex();
+            break;
 
-                } else {
-                    unlockMutex();
+        case State::WAITING_MECHANIC:
+            mainData.lookForMechanic();
+
+            break;
+
+        case State::IN_REPAIR:
+            // przebywanie w naprawie
+            sleep(1);
+
+            // zmiana stanu statku
+            mainData.state = State::FIGHTING;
+
+            // wysyłanie RELEASE_M i RELEASE_D
+            packet->lamportTime = lamportTime;
+            packet->docking = 0;
+            packet->mechanics = 0;
+
+            println("[%d] I'm leaving the dock", mainData.rank);
+            if (DEBUG) {
+                println("send RELEASE_M(time = %d) to ALL", packet->lamportTime);
+                println("send RELEASE_D(time = %d) to ALL", packet->lamportTime);
+            }
+
+            for (int i = 0; i < mainData.size; i++) {
+                if (i != mainData.rank) {
+                    MPI_Send(packet, 1, MPI_PACKET_T, i, Message::RELEASE_M, MPI_COMM_WORLD);
+                    MPI_Send(packet, 1, MPI_PACKET_T, i, Message::RELEASE_D, MPI_COMM_WORLD);
                 }
-
-                break;
-
-            case State::IN_REPAIR:
-
-
-        sleep(WAITING_TIME);
+            }
+            checkState();
+            break;
     }
 }

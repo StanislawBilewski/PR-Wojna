@@ -4,5 +4,6 @@
 #include <stdio.h>
 
 void mainLoop();
+void checkState();
 
 #endif

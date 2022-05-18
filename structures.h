@@ -52,8 +52,10 @@ public:
     bool isAckDFromAll();
     bool isAckMFromAll();
     int sumMechanics();
-    bool checkMechanics();
+    bool checkMechanics(int);
     int mechanicsNeeded();
+    void lookForDock();
+    void lookForMechanic();
 };
 
 #endif

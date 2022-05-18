@@ -10,6 +10,7 @@ void *comLoop(void *ptr) {
     while (true) {
         MPI_Recv(&packet, 1, MPI_PACKET_T, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
+        // TODO: sprawdzić wszystkie lamportTime
         switch (status.MPI_TAG) {
             int state;
             bool ack;

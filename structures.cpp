@@ -44,7 +44,12 @@ void Data::lookForDock() {
         packet->lamportTime = lamportTime;
         packet->docking = 1;
         packet->mechanics = 0;
-        //TODO: wysyłanie ACK_D do wszystkich z kolejki oczekujących
+
+        for(auto & i : mainData.requestQueue) {
+            int targetRank = i[0];
+            MPI_Send(&packet, targetRank, MPI_PACKET_T, status.MPI_SOURCE, Message::ACK_D, MPI_COMM_WORLD);
+            if (DEBUG) println("send ACK(time = %d) to rank = %d", packet->lamportTime, status.MPI_SOURCE);
+        }
 
         lockMutex();
 
@@ -127,7 +132,12 @@ void Data::lookForMechanic() {
             packet->lamportTime = lamportTime;
             packet->docking = 1;
             packet->mechanics = mechanics;
-            //TODO: wysyłanie ACK_M do wszystkich z kolejki oczekujących
+
+            for(auto & i : mainData.requestQueue) {
+                int targetRank = i[0];
+                MPI_Send(&packet, targetRank, MPI_PACKET_T, status.MPI_SOURCE, Message::ACK_D, MPI_COMM_WORLD);
+                if (DEBUG) println("send ACK(time = %d) to rank = %d", packet->lamportTime, status.MPI_SOURCE);
+            }
 
             lockMutex();
 

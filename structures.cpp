@@ -62,13 +62,16 @@ void Data::lookForDock() {
         incLamportTime(LAMPORT_DEF);
         lamportTime = mainData.lamportTime;
 
+        // zapisuje żądanie w kolejce
+        mainData.requestQueue.push_back({mainData.rank, lamportTime});
+        unlockMutex();
+
         // wysyła REQ_M do wszystkich (poza samym sobą)
         for (int i = 0; i < mainData.size; i++) {
             if (i != mainData.rank)
                 MPI_Send(packet, 1, MPI_PACKET_T, i, Message::REQ_M, MPI_COMM_WORLD);
         }
 
-        unlockMutex();
         checkState();
 
     } else {

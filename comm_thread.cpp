@@ -29,7 +29,9 @@ void *comLoop(void *ptr) {
                         ack = true;
                     }
                     else {
-                        // TODO: sprawdzenie czy żądanie statku ma niższy priorytet
+                        if(checkPriority(packet.lamportTime)){
+                            ack = true;
+                        }
                     }
                 unlockMutex();
 
@@ -47,7 +49,10 @@ void *comLoop(void *ptr) {
                     if (DEBUG) println("send ACK(time = %d) to rank = %d", response.lamportTime, status.MPI_SOURCE);
                 }
                 else{
-                    // TODO: zapamiętanie w kolejce oczekująych
+                    // zapisuje żądanie w kolejce
+                    lockMutex();
+                    mainData.requestQueue.push_back({status.MPI_SOURCE, packet.lamportTime});
+                    unlockMutex();
                 }
 
                 break;
@@ -89,7 +94,9 @@ void *comLoop(void *ptr) {
                     ack = true;
                 }
                 else {
-                    // TODO: sprawdzenie czy żądanie statku ma niższy priorytet
+                    if(checkPriority(packet.lamportTime)){
+                        ack = true;
+                    }
                 }
                 unlockMutex();
 
@@ -107,7 +114,10 @@ void *comLoop(void *ptr) {
                     if (DEBUG) println("send ACK(time = %d) to rank = %d", response.lamportTime, status.MPI_SOURCE);
                 }
                 else{
-                    // TODO: zapamiętanie w kolejce oczekująych
+                    // zapisuje żądanie w kolejce
+                    lockMutex();
+                    mainData.requestQueue.push_back({status.MPI_SOURCE, packet.lamportTime});
+                    unlockMutex();
                 }
 
                 break;
@@ -133,4 +143,11 @@ void *comLoop(void *ptr) {
         }
 
     }
+}
+
+bool checkPriority(int time){
+    // TODO: sortowanie kolejki
+    if(mainData.requestQueue[0][1] > time){
+        return true;
+    }else return false;
 }

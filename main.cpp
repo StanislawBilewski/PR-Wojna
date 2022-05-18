@@ -9,6 +9,7 @@ MPI_Datatype MPI_PACKET_T;
 Data mainData;
 
 pthread_mutex_t stateMutex = PTHREAD_MUTEX_INITIALIZER;
+pthhread_t commThread;
 
 void lockMutex() {
     pthread_mutex_lock(&stateMutex);
@@ -72,12 +73,15 @@ void initApp(int *argc, char ***argv) {
 //    srand(time(NULL) * rank);
     srand(rank);
     mainData.init(rank, size);
+
+    pthread_create(&commThread, NULL, comLoop, 0);
     
     sleep(1);
     if (DEBUG) println("Application ready");
 }
 
 void finalizeApp() {
+    pthread_join(commThread, NULL);
     MPI_Type_free(&MPI_PACKET_T);
     MPI_Finalize();
 }

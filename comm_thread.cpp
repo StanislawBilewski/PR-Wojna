@@ -16,7 +16,7 @@ void *comLoop(void *ptr) {
             bool ack;
             int lamportTime;
             case Message::REQ_D:
-                if (DEBUG) println("receive REQ(time = %d, mechanics = %d, docking = %d) from rank = %d", packet.lamportTime, packet.mechanics, packet.docking, status.MPI_SOURCE);
+                if (DEBUG) println("receive REQ_D(time = %d, mechanics = %d, docking = %d) from rank = %d", packet.lamportTime, packet.mechanics, packet.docking, status.MPI_SOURCE);
                 
                 state = mainData.state;
                 ack = false;
@@ -47,7 +47,7 @@ void *comLoop(void *ptr) {
 
                     // wysłanie ACK
                     MPI_Send(&response, 1, MPI_PACKET_T, status.MPI_SOURCE, Message::ACK_D, MPI_COMM_WORLD);
-                    if (DEBUG) println("send ACK(time = %d) to rank = %d", response.lamportTime, status.MPI_SOURCE);
+                    if (DEBUG) println("send ACK_D(time = %d) to rank = %d", response.lamportTime, status.MPI_SOURCE);
                 }
                 else{
                     // zapisuje żądanie w kolejce
@@ -81,7 +81,7 @@ void *comLoop(void *ptr) {
                 break;
 
             case Message::REQ_M:
-                if (DEBUG) println("receive REQ(time = %d, mechanics = %d, docking = %d) from rank = %d", packet.lamportTime, packet.mechanics, packet.docking, status.MPI_SOURCE);
+                if (DEBUG) println("receive REQ_M(time = %d, mechanics = %d, docking = %d) from rank = %d", packet.lamportTime, packet.mechanics, packet.docking, status.MPI_SOURCE);
 
                 state = mainData.state;
                 ack = false;
@@ -112,7 +112,7 @@ void *comLoop(void *ptr) {
 
                     // wysłanie ACK
                     MPI_Send(&response, 1, MPI_PACKET_T, status.MPI_SOURCE, Message::ACK_M, MPI_COMM_WORLD);
-                    if (DEBUG) println("send ACK(time = %d) to rank = %d", response.lamportTime, status.MPI_SOURCE);
+                    if (DEBUG) println("send ACK_M(time = %d) to rank = %d", response.lamportTime, status.MPI_SOURCE);
                 }
                 else{
                     // zapisuje żądanie w kolejce

@@ -136,7 +136,7 @@ void Data::lookForMechanic() {
                 int targetRank = mainData.requestQueue[0].second;
                 MPI_Send(&packet, 1, MPI_PACKET_T, targetRank, Message::ACK_D, MPI_COMM_WORLD);
                 mainData.requestQueue.erase(mainData.requestQueue.begin());
-                if (DEBUG) println("send ACK(time = %d) to rank = %d", packet->lamportTime, targetRank);
+                if (DEBUG) println("send ACK_M(time = %d) to rank = %d", packet->lamportTime, targetRank);
             }
 
             lockMutex();

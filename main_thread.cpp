@@ -72,6 +72,7 @@ void checkState(){
 
         case State::IN_REPAIR:
             // przebywanie w naprawie
+            println("[%d] I'm in repair", mainData.rank);
             sleep(1);
             int lamportTime;
             

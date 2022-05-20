@@ -43,7 +43,7 @@ void Data::lookForDock() {
         for(auto & i : mainData.requestQueue) {
             int targetRank = i.second;
             MPI_Send(&packet, 1, MPI_PACKET_T, targetRank, Message::ACK_D, MPI_COMM_WORLD);
-            if (DEBUG) println("send ACK(time = %d) to rank = %d", packet->lamportTime, status.MPI_SOURCE);
+            if (DEBUG) println("send ACK(time = %d) to rank = %d", packet->lamportTime, targetRank);
         }
 
         lockMutex();
@@ -131,7 +131,7 @@ void Data::lookForMechanic() {
             for(auto & i : mainData.requestQueue) {
                 int targetRank = i.second;
                 MPI_Send(&packet, 1, MPI_PACKET_T, targetRank, Message::ACK_D, MPI_COMM_WORLD);
-                if (DEBUG) println("send ACK(time = %d) to rank = %d", packet->lamportTime, status.MPI_SOURCE);
+                if (DEBUG) println("send ACK(time = %d) to rank = %d", packet->lamportTime, targetRank);
             }
 
             lockMutex();

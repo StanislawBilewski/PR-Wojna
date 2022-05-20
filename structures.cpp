@@ -22,7 +22,7 @@ bool Data::isAckDFromAll() {
             return false;
     }
     if(mainData.requestQueue[0].second == mainData.rank){
-        mainData.requestQueue.erase(0);
+        mainData.requestQueue.erase(mainData.requestQueue.begin());
         return true;
     }else return false;
 }
@@ -46,7 +46,7 @@ void Data::lookForDock() {
         while(mainData.requestQueue.size() > 0) {
             int targetRank = mainData.requestQueue[0].second;
             MPI_Send(&packet, 1, MPI_PACKET_T, targetRank, Message::ACK_D, MPI_COMM_WORLD);
-            mainData.requestQueue.erase(0);
+            mainData.requestQueue.erase(mainData.requestQueue.begin());
             if (DEBUG) println("send ACK(time = %d) to rank = %d", packet->lamportTime, targetRank);
         }
 
@@ -135,7 +135,7 @@ void Data::lookForMechanic() {
             while(mainData.requestQueue.size() > 0) {
                 int targetRank = mainData.requestQueue[0].second;
                 MPI_Send(&packet, 1, MPI_PACKET_T, targetRank, Message::ACK_D, MPI_COMM_WORLD);
-                mainData.requestQueue.erase(0);
+                mainData.requestQueue.erase(mainData.requestQueue.begin());
                 if (DEBUG) println("send ACK(time = %d) to rank = %d", packet->lamportTime, targetRank);
             }
 

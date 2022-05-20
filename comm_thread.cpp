@@ -8,9 +8,9 @@ void *comLoop(void *ptr) {
     packet_t packet;
 
     while (true) {
+        // czekanie na otrzymanie wiadomości
         MPI_Recv(&packet, 1, MPI_PACKET_T, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
-        // TODO: sprawdzić wszystkie lamportTime
         switch (status.MPI_TAG) {
             int state;
             bool ack;
@@ -37,13 +37,13 @@ void *comLoop(void *ptr) {
                 unlockMutex();
 
                 if (ack){
-                    // tworzenie pakietu
-                    packet_t response;
-                    response.lamportTime = lamportTime;
-
                     // aktualizacja zegara lamporta przed wysłaniem
                     incLamportTime(LAMPORT_DEF);
                     lamportTime = mainData.lamportTime;
+
+                    // tworzenie pakietu
+                    packet_t response;
+                    response.lamportTime = lamportTime;
 
                     // wysłanie ACK
                     MPI_Send(&response, 1, MPI_PACKET_T, status.MPI_SOURCE, Message::ACK_D, MPI_COMM_WORLD);
@@ -52,7 +52,7 @@ void *comLoop(void *ptr) {
                 else{
                     // zapisuje żądanie w kolejce
                     lockMutex();
-                    mainData.requestQueue.push_back({status.MPI_SOURCE, packet.lamportTime});
+                    mainData.requestQueue.push_back(make_pair(packet.lamportTime, status.MPI_SOURCE));
                     unlockMutex();
                 }
 
@@ -102,13 +102,13 @@ void *comLoop(void *ptr) {
                 unlockMutex();
 
                 if (ack){
-                    // tworzenie pakietu
-                    packet_t response;
-                    response.lamportTime = lamportTime;
-
                     // aktualizacja zegara lamporta przed wysłaniem
                     incLamportTime(LAMPORT_DEF);
                     lamportTime = mainData.lamportTime;
+
+                    // tworzenie pakietu
+                    packet_t response;
+                    response.lamportTime = lamportTime;
 
                     // wysłanie ACK
                     MPI_Send(&response, 1, MPI_PACKET_T, status.MPI_SOURCE, Message::ACK_M, MPI_COMM_WORLD);
@@ -117,7 +117,7 @@ void *comLoop(void *ptr) {
                 else{
                     // zapisuje żądanie w kolejce
                     lockMutex();
-                    mainData.requestQueue.push_back({status.MPI_SOURCE, packet.lamportTime});
+                    mainData.requestQueue.push_back(make_pair(packet.lamportTime, status.MPI_SOURCE));
                     unlockMutex();
                 }
 
@@ -147,8 +147,8 @@ void *comLoop(void *ptr) {
 }
 
 bool checkPriority(int time){
-    // TODO: sortowanie kolejki
-    if(mainData.requestQueue[0][1] > time){
+    sort(mainData.requestQueue.begin(), mainData.requestQueue.end());
+    if(mainData.requestQueue[0].first > time){
         return true;
     }else return false;
 }

@@ -6,6 +6,7 @@
 #include "constants.h"
 #include "structures.h"
 #include "main.h"
+#include <algorithm>
 
 void *comLoop(void *ptr);
 bool checkPriority(int);

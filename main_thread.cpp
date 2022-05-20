@@ -47,7 +47,7 @@ void checkState(){
 
                 // zapisuje żądanie w kolejce
                 lockMutex();
-                mainData.requestQueue.push_back({mainData.rank, lamportTime});
+                mainData.requestQueue.emplace_back(make_pair(lamportTime,mainData.rank));
                 unlockMutex();
 
                 for (int i = 0; i < mainData.size; i++) {

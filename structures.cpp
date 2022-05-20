@@ -21,7 +21,10 @@ bool Data::isAckDFromAll() {
         if (!this->ackDList[i])
             return false;
     }
-    return true;
+    if(mainData.requestQueue[0].second == mainData.rank){
+        mainData.requestQueue.erase(mainData.requestQueue.begin());
+        return true;
+    }else return false;
 }
 
 void Data::lookForDock() {
@@ -40,10 +43,11 @@ void Data::lookForDock() {
         packet->docking = 1;
         packet->mechanics = 0;
 
-        for(auto & i : mainData.requestQueue) {
-            int targetRank = i.second;
-            MPI_Send(&packet, targetRank, MPI_PACKET_T, status.MPI_SOURCE, Message::ACK_D, MPI_COMM_WORLD);
-            if (DEBUG) println("send ACK(time = %d) to rank = %d", packet->lamportTime, status.MPI_SOURCE);
+        while(mainData.requestQueue.size() > 0) {
+            int targetRank = mainData.requestQueue[0].second;
+            MPI_Send(&packet, 1, MPI_PACKET_T, targetRank, Message::ACK_D, MPI_COMM_WORLD);
+            mainData.requestQueue.erase(mainData.requestQueue.begin());
+            if (DEBUG) println("send ACK(time = %d) to rank = %d", packet->lamportTime, targetRank);
         }
 
         lockMutex();
@@ -128,10 +132,11 @@ void Data::lookForMechanic() {
             packet->docking = 1;
             packet->mechanics = mechanics;
 
-            for(auto & i : mainData.requestQueue) {
-                int targetRank = i.second;
-                MPI_Send(&packet, targetRank, MPI_PACKET_T, status.MPI_SOURCE, Message::ACK_D, MPI_COMM_WORLD);
-                if (DEBUG) println("send ACK(time = %d) to rank = %d", packet->lamportTime, status.MPI_SOURCE);
+            while(mainData.requestQueue.size() > 0) {
+                int targetRank = mainData.requestQueue[0].second;
+                MPI_Send(&packet, 1, MPI_PACKET_T, targetRank, Message::ACK_D, MPI_COMM_WORLD);
+                mainData.requestQueue.erase(mainData.requestQueue.begin());
+                if (DEBUG) println("send ACK_M(time = %d) to rank = %d", packet->lamportTime, targetRank);
             }
 
             lockMutex();

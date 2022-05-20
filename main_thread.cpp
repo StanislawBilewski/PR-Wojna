@@ -55,6 +55,7 @@ void checkState(){
                         MPI_Send(packet, 1, MPI_PACKET_T, i, Message::REQ_D, MPI_COMM_WORLD);
                 }
             }
+            sleep(WAITING_TIME);
             checkState();
 
             break;
@@ -71,6 +72,7 @@ void checkState(){
 
         case State::IN_REPAIR:
             // przebywanie w naprawie
+            println("[%d] I'm in repair", mainData.rank);
             sleep(1);
             int lamportTime;
             

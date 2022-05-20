@@ -9,7 +9,7 @@ MPI_Datatype MPI_PACKET_T;
 Data mainData;
 
 pthread_mutex_t stateMutex = PTHREAD_MUTEX_INITIALIZER;
-pthhread_t commThread;
+pthread_t commThread;
 
 void lockMutex() {
     pthread_mutex_lock(&stateMutex);

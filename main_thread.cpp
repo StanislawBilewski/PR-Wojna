@@ -55,7 +55,7 @@ void checkState(){
                         MPI_Send(packet, 1, MPI_PACKET_T, i, Message::REQ_D, MPI_COMM_WORLD);
                 }
             }
-            sleep(WAITING_TIME)
+            sleep(WAITING_TIME);
             checkState();
 
             break;

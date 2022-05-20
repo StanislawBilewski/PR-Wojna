@@ -5,11 +5,6 @@
 #include <stdio.h>
 #include <math.h>
 
-// Process::Process(int rank, int requestTime) {
-//     this->rank = rank;
-//     this->requestTime = requestTime;
-// }
-
 void Data::init(int rank, int size) {
     this->state = State::FIGHTING;
     this->rank = rank;
@@ -46,7 +41,7 @@ void Data::lookForDock() {
         packet->mechanics = 0;
 
         for(auto & i : mainData.requestQueue) {
-            int targetRank = i[0];
+            int targetRank = i.second;
             MPI_Send(&packet, targetRank, MPI_PACKET_T, status.MPI_SOURCE, Message::ACK_D, MPI_COMM_WORLD);
             if (DEBUG) println("send ACK(time = %d) to rank = %d", packet->lamportTime, status.MPI_SOURCE);
         }
@@ -68,7 +63,7 @@ void Data::lookForDock() {
         lamportTime = mainData.lamportTime;
 
         // zapisuje żądanie w kolejce
-        mainData.requestQueue.push_back({mainData.rank, lamportTime});
+        mainData.requestQueue.emplace_back(make_pair(lamportTime,mainData.rank));
         unlockMutex();
 
         // wysyła REQ_M do wszystkich (poza samym sobą)
@@ -134,7 +129,7 @@ void Data::lookForMechanic() {
             packet->mechanics = mechanics;
 
             for(auto & i : mainData.requestQueue) {
-                int targetRank = i[0];
+                int targetRank = i.second;
                 MPI_Send(&packet, targetRank, MPI_PACKET_T, status.MPI_SOURCE, Message::ACK_D, MPI_COMM_WORLD);
                 if (DEBUG) println("send ACK(time = %d) to rank = %d", packet->lamportTime, status.MPI_SOURCE);
             }

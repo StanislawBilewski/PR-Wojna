@@ -52,7 +52,7 @@ void *comLoop(void *ptr) {
                 else{
                     // zapisuje żądanie w kolejce
                     lockMutex();
-                    mainData.requestQueue.push_back({status.MPI_SOURCE, packet.lamportTime});
+                    mainData.requestQueue.push_back(make_pair(packet.lamportTime, status.MPI_SOURCE));
                     unlockMutex();
                 }
 
@@ -117,7 +117,7 @@ void *comLoop(void *ptr) {
                 else{
                     // zapisuje żądanie w kolejce
                     lockMutex();
-                    mainData.requestQueue.push_back({status.MPI_SOURCE, packet.lamportTime});
+                    mainData.requestQueue.push_back(make_pair(packet.lamportTime, status.MPI_SOURCE));
                     unlockMutex();
                 }
 
@@ -147,8 +147,8 @@ void *comLoop(void *ptr) {
 }
 
 bool checkPriority(int time){
-    // TODO: sortowanie kolejki
-    if(mainData.requestQueue[0][1] > time){
+    sort(mainData.requestQueue.begin(), mainData.requestQueue.end());
+    if(mainData.requestQueue[0].first > time){
         return true;
     }else return false;
 }

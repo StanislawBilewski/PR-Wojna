@@ -47,7 +47,7 @@ public:
     vector<bool> ackMList;               // vector otrzymanych wiadomości ACK_M
     vector<bool> shipDocks;              // vector zajętych doków
     vector<int> shipMechanics;           // vector zajętych mechaników
-    vector<int[2]> requestQueue;         // kolejka oczekujących żądań (ranga, priorytet)
+    vector<pair<int,int>> requestQueue;         // kolejka oczekujących żądań (priorytet, ranga)
 
     void init(int rank, int size);
     bool isAckDFromAll();

@@ -30,6 +30,7 @@ bool Data::isAckDFromAll() {
 void Data::lookForDock() {
     lockMutex();
     if (isAckDFromAll()) {
+        mainData.shipDocks[mainData.rank] = 1;
         int lamportTime;
         // inkrementacja zegara lamporta
         incLamportTime(LAMPORT_DEF);
@@ -47,7 +48,7 @@ void Data::lookForDock() {
             int targetRank = mainData.requestQueue[0].second;
             MPI_Send(&packet, 1, MPI_PACKET_T, targetRank, Message::ACK_D, MPI_COMM_WORLD);
             mainData.requestQueue.erase(mainData.requestQueue.begin());
-            if (DEBUG) println("send ACK(time = %d) to rank = %d", packet->lamportTime, targetRank);
+            if (DEBUG) println("send ACK_D(time = %d) to rank = %d", packet->lamportTime, targetRank);
         }
 
         lockMutex();
@@ -71,6 +72,7 @@ void Data::lookForDock() {
         unlockMutex();
 
         // wysyła REQ_M do wszystkich (poza samym sobą)
+        if (DEBUG) println("send REQ_M(time = %d) to ALL", packet->lamportTime);
         for (int i = 0; i < mainData.size; i++) {
             if (i != mainData.rank)
                 MPI_Send(packet, 1, MPI_PACKET_T, i, Message::REQ_M, MPI_COMM_WORLD);
@@ -110,8 +112,10 @@ bool Data::isAckMFromAll() {
     for (int i = 0; i < this->ackMList.size(); i++) {
         if (!this->ackMList[i])
             return false;
-    }
-    return true;
+    }if(mainData.requestQueue[0].second == mainData.rank){
+        mainData.requestQueue.erase(mainData.requestQueue.begin());
+        return true;
+    }else return false;
 }
 
 void Data::lookForMechanic() {
@@ -119,6 +123,8 @@ void Data::lookForMechanic() {
     int mechanics = mechanicsNeeded();
     if (isAckMFromAll()) {
         if(checkMechanics(mechanics)){
+            println("[%d] DOSTALEM MECHANIKOW", mainData.rank);
+            mainData.shipMechanics[mainData.rank] = mechanics;
             int lamportTime;
             // inkrementacja zegara lamporta
             incLamportTime(LAMPORT_DEF);
@@ -144,9 +150,12 @@ void Data::lookForMechanic() {
             // zmiana stanu statku
             mainData.state = State::IN_REPAIR;
 
+            unlockMutex();
+
             checkState();
+        }else{
+            unlockMutex();
         }
-        unlockMutex();
     } else {
         unlockMutex();
     }

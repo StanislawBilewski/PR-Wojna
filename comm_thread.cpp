@@ -13,25 +13,28 @@ void *comLoop(void *ptr) {
 
         switch (status.MPI_TAG) {
             int state;
+            bool isdocking;
+            int mechanics;
             bool ack;
             int lamportTime;
             case Message::REQ_D:
                 if (DEBUG) println("receive REQ_D(time = %d, mechanics = %d, docking = %d) from rank = %d", packet.lamportTime, packet.mechanics, packet.docking, status.MPI_SOURCE);
-                
-                state = mainData.state;
-                ack = false;
-
                 lockMutex();
+                state = mainData.state;
+                isdocking = mainData.shipDocks[mainData.rank];
+                mechanics = mainData.shipMechanics[mainData.rank];
+                ack = 0;
+                
                     // aktualizacja zegara lamporta
                     incLamportTime(packet.lamportTime);
 
                     // sprawdzenie czy statek ubiega się o dostęp do doku
                     if (state != State::WAITING_DOCK){
-                        ack = true;
+                        ack = 1;
                     }
                     else {
                         if(checkPriority(packet.lamportTime)){
-                            ack = true;
+                            ack = 1;
                         }
                     }
                 unlockMutex();
@@ -44,6 +47,8 @@ void *comLoop(void *ptr) {
                     // tworzenie pakietu
                     packet_t response;
                     response.lamportTime = lamportTime;
+                    response.docking = isdocking;
+                    response.mechanics = mechanics;
 
                     // wysłanie ACK
                     MPI_Send(&response, 1, MPI_PACKET_T, status.MPI_SOURCE, Message::ACK_D, MPI_COMM_WORLD);
@@ -65,7 +70,7 @@ void *comLoop(void *ptr) {
                 // aktualizacja zegara lamporta
                 incLamportTime(packet.lamportTime);
                 // zapisz ACK na liście
-                mainData.ackDList[status.MPI_SOURCE] = true;
+                mainData.ackDList[status.MPI_SOURCE] = 1;
                 unlockMutex();
 
                 break;
@@ -74,37 +79,42 @@ void *comLoop(void *ptr) {
                 if (DEBUG) println("receive RELEASE_D(time = %d, mechanics = %d, docking = %d) from rank = %d", packet.lamportTime, packet.mechanics, packet.docking, status.MPI_SOURCE);
                 
                 lockMutex();
-                mainData.shipDocks[status.MPI_SOURCE] = false;
-                mainData.lookForDock();
+                mainData.shipDocks[status.MPI_SOURCE] = 0;
+                if(mainData.state == State::WAITING_DOCK){
+                    unlockMutex();
+                    mainData.lookForDock();
+                }
                 unlockMutex();
 
                 break;
 
             case Message::REQ_M:
                 if (DEBUG) println("receive REQ_M(time = %d, mechanics = %d, docking = %d) from rank = %d", packet.lamportTime, packet.mechanics, packet.docking, status.MPI_SOURCE);
-
-                state = mainData.state;
-                ack = false;
-
+                
                 lockMutex();
+                state = mainData.state;
+                ack = 0;
+
                 // aktualizacja zegara lamporta
                 incLamportTime(packet.lamportTime);
 
                 // sprawdzenie czy statek ubiega się o przydział mechaników
                 if (state != State::WAITING_MECHANIC){
-                    ack = true;
+                    ack = 1;
                 }
                 else {
                     if(checkPriority(packet.lamportTime)){
-                        ack = true;
+                        ack = 1;
                     }
                 }
                 unlockMutex();
 
                 if (ack){
+                    lockMutex();
                     // aktualizacja zegara lamporta przed wysłaniem
                     incLamportTime(LAMPORT_DEF);
                     lamportTime = mainData.lamportTime;
+                    unlockMutex();
 
                     // tworzenie pakietu
                     packet_t response;
@@ -131,10 +141,23 @@ void *comLoop(void *ptr) {
                 incLamportTime(packet.lamportTime);
 
                 // zapisz ACK na liście
-                mainData.ackMList[status.MPI_SOURCE] = true;
+                mainData.ackMList[status.MPI_SOURCE] = 1;
 
                 // zapisz liczbę mechaników
                 mainData.shipMechanics[status.MPI_SOURCE] = packet.mechanics;
+                unlockMutex();
+
+                break;
+
+            case Message::RELEASE_M:
+                if (DEBUG) println("receive RELEASE_M(time = %d, mechanics = %d, docking = %d) from rank = %d", packet.lamportTime, packet.mechanics, packet.docking, status.MPI_SOURCE);
+                
+                lockMutex();
+                mainData.shipMechanics[status.MPI_SOURCE] = 0;
+                if(mainData.state == State::WAITING_MECHANIC){
+                    unlockMutex();
+                    mainData.lookForMechanic();
+                }
                 unlockMutex();
 
                 break;

@@ -45,7 +45,7 @@ void check_thread_support(int provided) {
 void initType() {
     const int nItems = 3;
     int blockLengths[nItems] = { 1, 1, 1};
-    MPI_Datatype types[nItems] = { MPI_INT, MPI_INT, MPI_INT };
+    MPI_Datatype types[nItems] = { MPI_INT, MPI_INT, MPI_C_BOOL };
     
     MPI_Aint offsets[nItems];
     offsets[0] = offsetof(packet_t, lamportTime);

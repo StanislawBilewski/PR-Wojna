@@ -66,6 +66,7 @@ void checkState(){
             break;
 
         case State::WAITING_MECHANIC:
+            sleep(WAITING_TIME);
             mainData.lookForMechanic();
 
             break;
@@ -80,6 +81,9 @@ void checkState(){
 
                 // zmiana stanu statku
                 mainData.state = State::FIGHTING;
+            
+                // zwolnienie mechaników
+                mainData.shipMechanics[mainData.rank] = 0;
 
                 lamportTime = mainData.lamportTime;
 

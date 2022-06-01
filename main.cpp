@@ -70,8 +70,8 @@ void initApp(int *argc, char ***argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-//    srand(time(NULL) * rank);
-    srand(rank);
+   srand(time(NULL) * rank);
+    // srand(rank);
     mainData.init(rank, size);
 
     pthread_create(&commThread, NULL, comLoop, 0);

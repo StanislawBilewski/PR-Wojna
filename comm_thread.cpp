@@ -40,10 +40,12 @@ void *comLoop(void *ptr) {
                 unlockMutex();
 
                 if (ack){
+                    lockMutex();
                     // aktualizacja zegara lamporta przed wysłaniem
                     incLamportTime(LAMPORT_DEF);
                     lamportTime = mainData.lamportTime;
-
+                    unlockMutex();
+                    
                     // tworzenie pakietu
                     packet_t response;
                     response.lamportTime = lamportTime;
@@ -79,6 +81,9 @@ void *comLoop(void *ptr) {
                 if (DEBUG) println("receive RELEASE_D(time = %d, mechanics = %d, docking = %d) from rank = %d", packet.lamportTime, packet.mechanics, packet.docking, status.MPI_SOURCE);
                 
                 lockMutex();
+                // aktualizacja zegara lamporta
+                incLamportTime(packet.lamportTime);
+
                 mainData.shipDocks[status.MPI_SOURCE] = 0;
                 if(mainData.state == State::WAITING_DOCK){
                     unlockMutex();
@@ -154,11 +159,14 @@ void *comLoop(void *ptr) {
                 
                 lockMutex();
                 mainData.shipMechanics[status.MPI_SOURCE] = 0;
+                // aktualizacja zegara lamporta
+                incLamportTime(packet.lamportTime);
+
+                unlockMutex();
+
                 if(mainData.state == State::WAITING_MECHANIC){
-                    unlockMutex();
                     mainData.lookForMechanic();
                 }
-                unlockMutex();
 
                 break;
 

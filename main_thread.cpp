@@ -29,21 +29,13 @@ void checkState(){
 
                 // zerowanie listy zajmowanych doków
                 mainData.shipDocks.resize(mainData.size, false);
-
-                // inkrementacja wartości zegaru lamporta (przed wysyłaniem)
-                incLamportTime(LAMPORT_DEF);
-                lamportTime = mainData.lamportTime;
-
                 unlockMutex();
 
                 // wysyła REQ_D do wszystkich (poza samym sobą)
                 packet_t *packet = (packet_t *) malloc(sizeof(packet_t));
-                packet->lamportTime = lamportTime;
-                packet->mechanics = 0;
-                packet->docking = 0;
 
                 println("[%d] I want to dock", mainData.rank);
-                if (DEBUG) println("send REQ_D(time = %d) to ALL", packet->lamportTime);
+                if (DEBUG) println("send REQ_D to ALL");
 
                 // zapisuje żądanie w kolejce
                 lockMutex();
@@ -51,8 +43,26 @@ void checkState(){
                 unlockMutex();
 
                 for (int i = 0; i < mainData.size; i++) {
-                    if (i != mainData.rank)
+                    lockMutex();
+                    if (i != mainData.rank){
+
+                        // inkrementacja wartości zegaru lamporta (przed wysyłaniem)
+
+                        incLamportTime(LAMPORT_DEF);
+                        lamportTime = mainData.lamportTime;
+
+                        unlockMutex();
+
+                        packet->lamportTime = lamportTime;
+                        packet->mechanics = 0;
+                        packet->docking = 0;
+
                         MPI_Send(packet, 1, MPI_PACKET_T, i, Message::REQ_D, MPI_COMM_WORLD);
+
+                    }
+                    else{
+                        unlockMutex();
+                    }
                 }
             }
             sleep(WAITING_TIME);
@@ -85,26 +95,41 @@ void checkState(){
                 // zwolnienie mechaników
                 mainData.shipMechanics[mainData.rank] = 0;
 
-                lamportTime = mainData.lamportTime;
-
             unlockMutex();
             
             // wysyłanie RELEASE_M i RELEASE_D
             packet_t *packet = (packet_t *) malloc(sizeof(packet_t));
-            packet->lamportTime = lamportTime;
-            packet->docking = 0;
-            packet->mechanics = 0;
 
             println("[%d] I'm leaving the dock", mainData.rank);
             if (DEBUG) {
-                println("send RELEASE_M(time = %d) to ALL", packet->lamportTime);
-                println("send RELEASE_D(time = %d) to ALL", packet->lamportTime);
+                println("send RELEASE_M to ALL");
+                println("send RELEASE_D to ALL");
             }
 
             for (int i = 0; i < mainData.size; i++) {
+                lockMutex();
                 if (i != mainData.rank) {
+                    incLamportTime(LAMPORT_DEF);
+                    lamportTime = mainData.lamportTime;
+                    unlockMutex();
+
+                    packet->lamportTime = lamportTime;
+                    packet->docking = 0;
+                    packet->mechanics = 0;
                     MPI_Send(packet, 1, MPI_PACKET_T, i, Message::RELEASE_M, MPI_COMM_WORLD);
+
+                    
+                    lockMutex();
+                    incLamportTime(LAMPORT_DEF);
+                    lamportTime = mainData.lamportTime;
+                    unlockMutex();
+                    
+                    packet->lamportTime = lamportTime;
+                    packet->docking = 0;
+                    packet->mechanics = 0;
                     MPI_Send(packet, 1, MPI_PACKET_T, i, Message::RELEASE_D, MPI_COMM_WORLD);
+                }else{
+                    unlockMutex();
                 }
             }
             checkState();

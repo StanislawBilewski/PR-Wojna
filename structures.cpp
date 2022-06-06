@@ -19,13 +19,13 @@ void Data::init(int rank, int size) {
 bool Data::isAckDFromAll() {
     for (int i = 0; i < this->ackDList.size(); i++) {
         if (!this->ackDList[i])
-            return false;
+            return 0;
     }
     if(mainData.requestQueue[0].second == mainData.rank){
         // usuwa własne żądanie
         mainData.requestQueue.erase(mainData.requestQueue.begin());
-        return true;
-    }else return false;
+        return 1;
+    }else return 0;
 }
 
 void Data::lookForDock() {
@@ -62,8 +62,8 @@ void Data::lookForDock() {
         mainData.shipMechanics.resize(mainData.size, 0);
 
         // zerowanie listy ACK_M
-        mainData.ackMList.resize(mainData.size, false);
-        mainData.ackMList[mainData.rank] = true;
+        mainData.ackMList.resize(mainData.size, 0);
+        mainData.ackMList[mainData.rank] = 1;
 
         // zapisuje żądanie w kolejce
         mainData.requestQueue.emplace_back(make_pair(lamportTime,mainData.rank));
@@ -88,6 +88,8 @@ void Data::lookForDock() {
                 unlockMutex();
             }
         }
+
+        // free(packet);
 
         checkState();
 
@@ -115,19 +117,19 @@ int Data::mechanicsNeeded() {
 bool Data::checkMechanics(int needed){
     if(needed <= MECHANICS - sumMechanics()){
         // UWAGA! MUTEX WCIĄŻ ZABLOKOWANY!
-        return true;
-    }else return false;
+        return 1;
+    }else return 0;
 }
 
 bool Data::isAckMFromAll() {
     for (int i = 0; i < this->ackMList.size(); i++) {
         if (!this->ackMList[i])
-            return false;
+            return 0;
     }if(mainData.requestQueue[0].second == mainData.rank){
         // usuwa własne żądanie
         mainData.requestQueue.erase(mainData.requestQueue.begin());
-        return true;
-    }else return false;
+        return 1;
+    }else return 0;
 }
 
 void Data::lookForMechanic() {

@@ -12,17 +12,15 @@ void *comLoop(void *ptr) {
         MPI_Recv(&packet, 1, MPI_PACKET_T, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
         switch (status.MPI_TAG) {
+            int takenMechanics;
+            int isDocking;
             int state;
-            bool isdocking;
-            int mechanics;
             bool ack;
             int lamportTime;
             case Message::REQ_D:
                 if (DEBUG) println("receive REQ_D(time = %d, mechanics = %d, docking = %d) from rank = %d", packet.lamportTime, packet.mechanics, packet.docking, status.MPI_SOURCE);
                 lockMutex();
                 state = mainData.state;
-                isdocking = mainData.shipDocks[mainData.rank];
-                mechanics = mainData.shipMechanics[mainData.rank];
                 ack = 0;
                 
                     // aktualizacja zegara lamporta
@@ -44,17 +42,21 @@ void *comLoop(void *ptr) {
                     // aktualizacja zegara lamporta przed wysłaniem
                     incLamportTime(LAMPORT_DEF);
                     lamportTime = mainData.lamportTime;
+
+                    isDocking = mainData.shipDocks[mainData.rank];
+                    takenMechanics = mainData.shipMechanics[mainData.rank];
+
                     unlockMutex();
                     
                     // tworzenie pakietu
                     packet_t response;
                     response.lamportTime = lamportTime;
-                    response.docking = isdocking;
-                    response.mechanics = mechanics;
+                    response.docking = isDocking;
+                    response.mechanics = takenMechanics;
 
                     // wysłanie ACK
-                    MPI_Send(&response, 1, MPI_PACKET_T, status.MPI_SOURCE, Message::ACK_D, MPI_COMM_WORLD);
                     if (DEBUG) println("send ACK_D(time = %d) to rank = %d", response.lamportTime, status.MPI_SOURCE);
+                    MPI_Send(&response, 1, MPI_PACKET_T, status.MPI_SOURCE, Message::ACK_D, MPI_COMM_WORLD);
                 }
                 else{
                     // zapisuje żądanie w kolejce
@@ -119,11 +121,16 @@ void *comLoop(void *ptr) {
                     // aktualizacja zegara lamporta przed wysłaniem
                     incLamportTime(LAMPORT_DEF);
                     lamportTime = mainData.lamportTime;
-                    unlockMutex();
+                    isDocking = mainData.shipDocks[mainData.rank];
+                    takenMechanics = mainData.shipMechanics[mainData.rank];
 
+                    unlockMutex();
+                    
                     // tworzenie pakietu
                     packet_t response;
                     response.lamportTime = lamportTime;
+                    response.docking = isDocking;
+                    response.mechanics = takenMechanics;
 
                     // wysłanie ACK
                     MPI_Send(&response, 1, MPI_PACKET_T, status.MPI_SOURCE, Message::ACK_M, MPI_COMM_WORLD);
@@ -180,6 +187,6 @@ void *comLoop(void *ptr) {
 bool checkPriority(int time){
     sort(mainData.requestQueue.begin(), mainData.requestQueue.end());
     if(mainData.requestQueue[0].first > time){
-        return true;
-    }else return false;
+        return 1;
+    }else return 0;
 }

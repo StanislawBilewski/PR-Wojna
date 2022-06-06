@@ -15,8 +15,11 @@ void checkState(){
             perc = rand() % 100;
             if (perc < HIT_PROB) {
                 // statek otrzymuje losowe obrażenia
+
                 int lamportTime;
                 int dmg = (rand() % (MAX_DMG - MIN_DMG + 1)) + MIN_DMG;
+
+                println("I've been hit for %d points of damage!", dmg);
 
                 lockMutex();
                 mainData.dmg = dmg;
@@ -24,17 +27,17 @@ void checkState(){
                 mainData.state = State::WAITING_DOCK;
 
                 // zerowanie listy ACK_D
-                mainData.ackDList.resize(mainData.size, false);
-                mainData.ackDList[mainData.rank] = true;
+                mainData.ackDList.resize(mainData.size, 0);
+                mainData.ackDList[mainData.rank] = 1;
 
                 // zerowanie listy zajmowanych doków
-                mainData.shipDocks.resize(mainData.size, false);
+                mainData.shipDocks.resize(mainData.size, 0);
                 unlockMutex();
 
                 // wysyła REQ_D do wszystkich (poza samym sobą)
                 packet_t *packet = (packet_t *) malloc(sizeof(packet_t));
 
-                println("[%d] I want to dock", mainData.rank);
+                println("I want to dock");
                 if (DEBUG) println("send REQ_D to ALL");
 
                 // zapisuje żądanie w kolejce
@@ -84,16 +87,22 @@ void checkState(){
         case State::IN_REPAIR:
             // przebywanie w naprawie
             println("[%d] I'm in repair", mainData.rank);
-            sleep(1);
             int lamportTime;
+            int docking;
+            int mechanics;
             
             lockMutex();
+                sleep(WAITING_TIME * (1 + mainData.dmg/25));
 
                 // zmiana stanu statku
                 mainData.state = State::FIGHTING;
             
-                // zwolnienie mechaników
+                // zwolnienie mechaników i doku
+                mainData.shipDocks[mainData.rank] = 0;
                 mainData.shipMechanics[mainData.rank] = 0;
+
+                docking = mainData.shipDocks[mainData.rank];
+                mechanics = mainData.shipMechanics[mainData.rank];
 
             unlockMutex();
             
@@ -102,8 +111,8 @@ void checkState(){
 
             println("[%d] I'm leaving the dock", mainData.rank);
             if (DEBUG) {
-                println("send RELEASE_M to ALL");
-                println("send RELEASE_D to ALL");
+                println("send RELEASE_M to ALL (docking = %d, mechanics = %d)", docking, mechanics);
+                println("send RELEASE_D to ALL (docking = %d, mechanics = %d)", docking, mechanics);
             }
 
             for (int i = 0; i < mainData.size; i++) {
@@ -114,8 +123,8 @@ void checkState(){
                     unlockMutex();
 
                     packet->lamportTime = lamportTime;
-                    packet->docking = 0;
-                    packet->mechanics = 0;
+                    packet->docking = docking;
+                    packet->mechanics = mechanics;
                     MPI_Send(packet, 1, MPI_PACKET_T, i, Message::RELEASE_M, MPI_COMM_WORLD);
 
                     
@@ -125,8 +134,8 @@ void checkState(){
                     unlockMutex();
                     
                     packet->lamportTime = lamportTime;
-                    packet->docking = 0;
-                    packet->mechanics = 0;
+                    packet->docking = docking;
+                    packet->mechanics = mechanics;
                     MPI_Send(packet, 1, MPI_PACKET_T, i, Message::RELEASE_D, MPI_COMM_WORLD);
                 }else{
                     unlockMutex();

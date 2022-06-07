@@ -20,25 +20,24 @@ void unlockMutex() {
 }
 
 void check_thread_support(int provided) {
-    if (DEBUG) printf("THREAD SUPPORT: żądane %d\n", provided);
+    if (DEBUG) printf("THREAD SUPPORT: requested %d\n", provided);
     switch (provided) {
         case MPI_THREAD_SINGLE: 
-            if (DEBUG) printf("Brak wsparcia dla wątków.\n");
             fprintf(stderr, "No tread support - leaving...\n");
             MPI_Finalize();
             exit(-1);
             break;
         case MPI_THREAD_FUNNELED: 
-            if (DEBUG) printf("Tylko te wątki, ktore wykonaly mpi_init_thread mogą wykonać wołania do biblioteki MPI.\n");
+            if (DEBUG) printf("MPI_THREAD_FUNNELED\n");
 	        break;
         case MPI_THREAD_SERIALIZED: 
-            if (DEBUG) printf("Tylko jeden watek naraz może wykonać wołania do biblioteki MPI.\n");
+            if (DEBUG) printf("MPI_THREAD_SERIALIZED\n");
 	        break;
         case MPI_THREAD_MULTIPLE:
-            if (DEBUG) printf("Pełne wsparcie dla wątków.\n");
+            if (DEBUG) printf("Full thread support.\n");
 	        break;
         default:
-            if (DEBUG) printf("Brak informacji.\n");
+            if (DEBUG) printf("No information returned...\n");
     }
 }
 

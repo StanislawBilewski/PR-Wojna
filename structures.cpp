@@ -57,6 +57,8 @@ void Data::lookForDock() {
 
         // zmiana stanu statku
         mainData.state = State::WAITING_MECHANIC;
+        
+        println("I'M DOCKING!");
 
         // zerowanie listy zajętych mechaników
         mainData.shipMechanics.resize(mainData.size, 0);
@@ -68,6 +70,8 @@ void Data::lookForDock() {
         // zapisuje żądanie w kolejce
         mainData.requestQueue.emplace_back(make_pair(lamportTime,mainData.rank));
         unlockMutex();
+
+        free(packet);
 
         // wysyła REQ_M do wszystkich (poza samym sobą)
         if (DEBUG) println("send REQ_M to ALL");
@@ -137,7 +141,7 @@ void Data::lookForMechanic() {
     int mechanics = mechanicsNeeded();
     if (isAckMFromAll()) {
         if(checkMechanics(mechanics)){
-            println("[%d] DOSTALEM MECHANIKOW", mainData.rank);
+            println("I RECEIVED %d MECHANICS", mechanics);
             mainData.shipMechanics[mainData.rank] = mechanics;
             int lamportTime;
 
@@ -166,6 +170,8 @@ void Data::lookForMechanic() {
             mainData.state = State::IN_REPAIR;
 
             unlockMutex();
+
+            free(packet);
 
             checkState();
         }else{

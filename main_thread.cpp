@@ -14,9 +14,9 @@ void checkState(){
             int perc;
             perc = rand() % 100;
             if (perc < HIT_PROB) {
-                // statek otrzymuje losowe obrażenia
-
                 int lamportTime;
+
+                // statek otrzymuje losowe obrażenia
                 int dmg = (rand() % (MAX_DMG - MIN_DMG + 1)) + MIN_DMG;
 
                 println("I've been hit for %d points of damage!", dmg);
@@ -32,6 +32,9 @@ void checkState(){
 
                 // zerowanie listy zajmowanych doków
                 mainData.shipDocks.resize(mainData.size, 0);
+
+                // zapisuje żądanie w kolejce
+                mainData.requestQueue.emplace_back(make_pair(lamportTime,mainData.rank));
                 unlockMutex();
 
                 // wysyła REQ_D do wszystkich (poza samym sobą)
@@ -39,11 +42,6 @@ void checkState(){
 
                 println("I want to dock");
                 if (DEBUG) println("send REQ_D to ALL");
-
-                // zapisuje żądanie w kolejce
-                lockMutex();
-                mainData.requestQueue.emplace_back(make_pair(lamportTime,mainData.rank));
-                unlockMutex();
 
                 for (int i = 0; i < mainData.size; i++) {
                     lockMutex();
@@ -67,6 +65,7 @@ void checkState(){
                         unlockMutex();
                     }
                 }
+                free(packet);
             }
             sleep(WAITING_TIME);
             checkState();
@@ -86,13 +85,13 @@ void checkState(){
 
         case State::IN_REPAIR:
             // przebywanie w naprawie
-            println("[%d] I'm in repair", mainData.rank);
+            println("I'm in repair");
             int lamportTime;
             int docking;
             int mechanics;
             
             lockMutex();
-                sleep(WAITING_TIME * (1 + mainData.dmg/25));
+                sleep(10 * WAITING_TIME * (1 + mainData.dmg/25));
 
                 // zmiana stanu statku
                 mainData.state = State::FIGHTING;
@@ -141,6 +140,8 @@ void checkState(){
                     unlockMutex();
                 }
             }
+
+            free(packet);
             checkState();
             break;
     }

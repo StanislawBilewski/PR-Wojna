@@ -30,7 +30,7 @@ bool Data::isAckDFromAll() {
 
 void Data::lookForDock() {
     lockMutex();
-    if (isAckDFromAll()) {
+    if (isAckDFromAll() && checkDocks()) {
         mainData.shipDocks[mainData.rank] = 1;
         int lamportTime;
         unlockMutex();
@@ -51,7 +51,7 @@ void Data::lookForDock() {
 
             int targetRank = mainData.requestQueue[0].second;
             if (DEBUG) println("send ACK_D(time = %d) to rank = %d", packet->lamportTime, targetRank);
-            MPI_Send(&packet, 1, MPI_PACKET_T, targetRank, Message::ACK_D, MPI_COMM_WORLD);
+            MPI_Send(packet, 1, MPI_PACKET_T, targetRank, Message::ACK_D, MPI_COMM_WORLD);
         }
         mainData.requestQueue.clear();
 
@@ -67,7 +67,7 @@ void Data::lookForDock() {
 
         //     int targetRank = mainData.requestQueue[0].second;
         //     if (DEBUG) println("send ACK_D(time = %d) to rank = %d", packet->lamportTime, targetRank);
-        //     MPI_Send(&packet, 1, MPI_PACKET_T, targetRank, Message::ACK_D, MPI_COMM_WORLD);
+        //     MPI_Send(packet, 1, MPI_PACKET_T, targetRank, Message::ACK_D, MPI_COMM_WORLD);
         //     mainData.requestQueue.erase(mainData.requestQueue.begin());
         // }
 
@@ -132,6 +132,19 @@ int Data::mechanicsNeeded() {
     float b = 1 - a*MIN_DMG;
 
     return (int) floor((float) this->dmg * a + b);
+}
+
+bool Data::checkDocks(){
+    int sum = 0;
+    for (bool ship : this->shipDocks){
+        if(ship == true){
+            sum += 1;
+        }
+    }
+    if(sum >= DOCKS)
+        return false;
+    else
+        return true;
 }
 
 bool Data::checkMechanics(int needed){

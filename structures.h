@@ -49,6 +49,7 @@ public:
     vector<int> shipMechanics;                  // vector zajętych mechaników
     vector<pair<int,int>> requestQueue;         // kolejka oczekujących żądań (priorytet, ranga)
 
+    bool checkDocks();
     void init(int rank, int size);
     bool isAckDFromAll();
     bool isAckMFromAll();

@@ -73,6 +73,7 @@ void checkState(){
             break;
 
         case State::WAITING_DOCK:
+            sleep(WAITING_TIME);
             mainData.lookForDock();
 
             break;
@@ -91,7 +92,7 @@ void checkState(){
             int mechanics;
             
             lockMutex();
-                sleep(10 * WAITING_TIME * (1 + mainData.dmg/25));
+                sleep(REPAIR_TIME/mechanics * WAITING_TIME * (1 + mainData.dmg/25));
 
                 // zmiana stanu statku
                 mainData.state = State::FIGHTING;
@@ -108,7 +109,7 @@ void checkState(){
             // wysyłanie RELEASE_M i RELEASE_D
             packet_t *packet = (packet_t *) malloc(sizeof(packet_t));
 
-            println("[%d] I'm leaving the dock", mainData.rank);
+            println("I'm leaving the dock");
             if (DEBUG) {
                 println("send RELEASE_M to ALL (docking = %d, mechanics = %d)", docking, mechanics);
                 println("send RELEASE_D to ALL (docking = %d, mechanics = %d)", docking, mechanics);

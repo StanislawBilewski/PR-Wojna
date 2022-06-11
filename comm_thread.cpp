@@ -176,8 +176,8 @@ void *comLoop(void *ptr) {
 
 
                 if(state == State::WAITING_MECHANIC){
-                    mainData.lookForMechanic();
                     unlockMutex();
+                    mainData.lookForMechanic();
                 }
                 else{
                     unlockMutex();

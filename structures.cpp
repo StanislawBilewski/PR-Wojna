@@ -193,7 +193,7 @@ void Data::lookForMechanic() {
                 packet->mechanics = mechanics;
 
                 int targetRank = mainData.requestQueue[0].second;
-                if (DEBUG) println("send ACK_M(time = %d, docking = %d, mechanics = %d) to rank = %d", packet->lamportTime, packet->docking, packet->mechanics, targetRank);
+                if (DEBUG) println("[REQUEST QUEUE] send ACK_M(time = %d, docking = %d, mechanics = %d) to rank = %d", packet->lamportTime, packet->docking, packet->mechanics, targetRank);
                 MPI_Send(packet, 1, MPI_PACKET_T, targetRank, Message::ACK_M, MPI_COMM_WORLD);
             }
             mainData.requestQueue.clear();

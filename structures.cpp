@@ -158,9 +158,11 @@ bool Data::isAckMFromAll() {
     for (int i = 0; i < this->ackMList.size(); i++) {
         if (!this->ackMList[i])
             return 0;
-    }if(mainData.requestQueue[0].second == mainData.rank){
+    }
+    if(mainData.requestQueue[0].second == mainData.rank){
         // usuwa własne żądanie
         mainData.requestQueue.erase(mainData.requestQueue.begin());
+        println("OWN REQUEST DELETED")
         return 1;
     }else return 0;
 }

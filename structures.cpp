@@ -16,6 +16,7 @@ void Data::init(int rank, int size) {
     this->shipMechanics.resize(size, 0);
 }
 
+// sprawdza czy dostał ACK_D od wszystkich procesów (i czy jest na początku kolejki requestów)
 bool Data::isAckDFromAll() {
     for (int i = 0; i < this->ackDList.size(); i++) {
         if (!this->ackDList[i])
@@ -24,12 +25,17 @@ bool Data::isAckDFromAll() {
     if(mainData.requestQueue[0].second == mainData.rank){
         // usuwa własne żądanie
         mainData.requestQueue.erase(mainData.requestQueue.begin());
+        println("OWN REQ_D DELETED")
         return 1;
     }else return 0;
 }
 
 void Data::lookForDock() {
     lockMutex();
+    if(mainData.state != State::WAITING_DOCK){
+        unlockMutex();
+        return;
+    }
     if (isAckDFromAll() && checkDocks()) {
         mainData.shipDocks[mainData.rank] = 1;
         int lamportTime;
@@ -50,7 +56,7 @@ void Data::lookForDock() {
             packet->mechanics = 0;
 
             int targetRank = mainData.requestQueue[0].second;
-            if (DEBUG) println("send ACK_D(time = %d) to rank = %d", packet->lamportTime, targetRank);
+            if (DEBUG) println("[REQUEST QUEUE] send ACK_D(time = %d) to rank = %d", packet->lamportTime, targetRank);
             MPI_Send(packet, 1, MPI_PACKET_T, targetRank, Message::ACK_D, MPI_COMM_WORLD);
         }
         mainData.requestQueue.clear();
@@ -71,10 +77,10 @@ void Data::lookForDock() {
         //     mainData.requestQueue.erase(mainData.requestQueue.begin());
         // }
 
+        println("I'M DOCKING!");
+
         // zmiana stanu statku
         mainData.state = State::WAITING_MECHANIC;
-        
-        println("I'M DOCKING!");
 
         // zerowanie listy zajętych mechaników
         mainData.shipMechanics.resize(mainData.size, 0);
@@ -87,12 +93,10 @@ void Data::lookForDock() {
         mainData.requestQueue.emplace_back(make_pair(lamportTime,mainData.rank));
         unlockMutex();
 
-        free(packet);
-
         // wysyła REQ_M do wszystkich (poza samym sobą)
         if (DEBUG) println("send REQ_M to ALL");
+        lockMutex();
         for (int i = 0; i < mainData.size; i++) {
-            lockMutex();
             if (i != mainData.rank){
                 // inkrementacja zegara lamporta
                 incLamportTime(LAMPORT_DEF);
@@ -102,13 +106,16 @@ void Data::lookForDock() {
                 packet->lamportTime = lamportTime;
                 packet->docking = 1;
                 packet->mechanics = 0;
+                
+                if (DEBUG) println("[REQ_M] send REQ_M (time = %d, mechanics = %d, docking = %d) to rank = %d", packet->lamportTime, packet->mechanics, packet->docking, i);
                 MPI_Send(packet, 1, MPI_PACKET_T, i, Message::REQ_M, MPI_COMM_WORLD);
-            }
-            else{
-                unlockMutex();
+
+                lockMutex();
             }
         }
+        unlockMutex();
 
+        free(packet);
         // free(packet);
 
         checkState();
@@ -124,6 +131,7 @@ int Data::sumMechanics() {
         sum += shipMechanics[i];
     }
 
+    if (DEBUG) println("[SUM MECHANICS] %d mechanics already taken", sum);
     return sum;
 }
 
@@ -136,8 +144,9 @@ int Data::mechanicsNeeded() {
 
 bool Data::checkDocks(){
     int sum = 0;
-    for (bool ship : this->shipDocks){
-        if(ship == true){
+    for (int i = 0; i<this->shipDocks.size(); i++){
+        if(this->shipDocks[i]){
+            if (DEBUG) println("[CHECK DOCKS] One of the docks is taken by rank = %d", i);
             sum += 1;
         }
     }
@@ -162,13 +171,17 @@ bool Data::isAckMFromAll() {
     if(mainData.requestQueue[0].second == mainData.rank){
         // usuwa własne żądanie
         mainData.requestQueue.erase(mainData.requestQueue.begin());
-        println("OWN REQUEST DELETED")
+        println("OWN REQ_M DELETED")
         return 1;
     }else return 0;
 }
 
 void Data::lookForMechanic() {
     lockMutex();
+    if(mainData.state != State::WAITING_MECHANIC){
+        unlockMutex();
+        return;
+    }
     int mechanics = mechanicsNeeded();
     if (isAckMFromAll()) {
         if(checkMechanics(mechanics)){

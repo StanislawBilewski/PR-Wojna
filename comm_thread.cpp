@@ -76,11 +76,16 @@ void *comLoop(void *ptr) {
                 if (DEBUG) println("receive ACK_D(time = %d, mechanics = %d, docking = %d) from rank = %d", packet.lamportTime, packet.mechanics, packet.docking, status.MPI_SOURCE);
         
                 lockMutex();
+                state = mainData.state;
                 // aktualizacja zegara lamporta
                 incLamportTime(packet.lamportTime);
                 // zapisz ACK na liście
                 mainData.ackDList[status.MPI_SOURCE] = 1;
-                unlockMutex();
+                if(mainData.state == State::WAITING_DOCK){
+                    unlockMutex();
+                    mainData.lookForDock();
+                }
+                else unlockMutex();
 
                 break;
 
@@ -88,6 +93,7 @@ void *comLoop(void *ptr) {
                 if (DEBUG) println("receive RELEASE_D(time = %d, mechanics = %d, docking = %d) from rank = %d", packet.lamportTime, packet.mechanics, packet.docking, status.MPI_SOURCE);
                 
                 lockMutex();
+                state = mainData.state;
                 // aktualizacja zegara lamporta
                 incLamportTime(packet.lamportTime);
 
@@ -96,7 +102,7 @@ void *comLoop(void *ptr) {
                     unlockMutex();
                     mainData.lookForDock();
                 }
-                unlockMutex();
+                else unlockMutex();
 
                 break;
 
@@ -154,6 +160,7 @@ void *comLoop(void *ptr) {
                 if (DEBUG) println("receive ACK_M(time = %d, mechanics = %d, docking = %d) from rank = %d", packet.lamportTime, packet.mechanics, packet.docking, status.MPI_SOURCE);
 
                 lockMutex();
+                state = mainData.state;
                 // aktualizacja zegara lamporta
                 incLamportTime(packet.lamportTime);
 
@@ -162,9 +169,14 @@ void *comLoop(void *ptr) {
 
                 // zapisz liczbę mechaników
                 mainData.shipMechanics[status.MPI_SOURCE] = packet.mechanics;
-                unlockMutex();
 
-                 mainData.lookForMechanic();
+                if(state == State::WAITING_MECHANIC){
+                    unlockMutex();
+                    mainData.lookForMechanic();
+                }
+                else{
+                    unlockMutex();
+                }
 
                 break;
 
@@ -172,6 +184,7 @@ void *comLoop(void *ptr) {
                 if (DEBUG) println("receive RELEASE_M(time = %d, mechanics = %d, docking = %d) from rank = %d", packet.lamportTime, packet.mechanics, packet.docking, status.MPI_SOURCE);
 
                 lockMutex();
+                state = mainData.state;
                 mainData.shipMechanics[status.MPI_SOURCE] = 0;
                 // aktualizacja zegara lamporta
                 incLamportTime(packet.lamportTime);

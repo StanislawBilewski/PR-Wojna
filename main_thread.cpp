@@ -5,12 +5,14 @@
 
 void mainLoop() {
     if (DEBUG) println("Hello");
+    mainData.shipDocks.resize(mainData.size, 0);
     checkState();
 }
 
 void checkState(){
     switch (mainData.state) {
         case State::FIGHTING:
+            sleep(WAITING_TIME);
             int perc;
             perc = rand() % 100;
             if (perc < HIT_PROB) {
@@ -22,19 +24,19 @@ void checkState(){
                 println("I've been hit for %d points of damage!", dmg);
 
                 lockMutex();
-                mainData.dmg = dmg;
-                // zmiana stanu statku
-                mainData.state = State::WAITING_DOCK;
+                    mainData.dmg = dmg;
+                    // zmiana stanu statku
+                    mainData.state = State::WAITING_DOCK;
 
-                // zerowanie listy ACK_D
-                mainData.ackDList.resize(mainData.size, 0);
-                mainData.ackDList[mainData.rank] = 1;
+                    // zerowanie listy ACK_D
+                    mainData.ackDList.resize(mainData.size, 0);
+                    mainData.ackDList[mainData.rank] = 1;
 
-                // zerowanie listy zajmowanych doków
-                mainData.shipDocks.resize(mainData.size, 0);
+                    // zerowanie listy zajmowanych doków
+                    mainData.shipDocks.resize(mainData.size, 0);
 
-                // zapisuje żądanie w kolejce
-                mainData.requestQueue.emplace_back(make_pair(lamportTime,mainData.rank));
+                    // zapisuje żądanie w kolejce
+                    mainData.requestQueue.emplace_back(make_pair(lamportTime,mainData.rank));
                 unlockMutex();
 
                 // wysyła REQ_D do wszystkich (poza samym sobą)
@@ -58,6 +60,7 @@ void checkState(){
                         packet->mechanics = 0;
                         packet->docking = 0;
 
+                        if (DEBUG) println("[REQ_D] send REQ_D (time = %d, mechanics = %d, docking = %d) to rank = %d", packet->lamportTime, packet->mechanics, packet->docking, i);
                         MPI_Send(packet, 1, MPI_PACKET_T, i, Message::REQ_D, MPI_COMM_WORLD);
 
                     }
@@ -67,7 +70,6 @@ void checkState(){
                 }
                 free(packet);
             }
-            sleep(WAITING_TIME);
             checkState();
 
             break;

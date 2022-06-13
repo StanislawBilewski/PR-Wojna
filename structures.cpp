@@ -158,9 +158,11 @@ bool Data::isAckMFromAll() {
     for (int i = 0; i < this->ackMList.size(); i++) {
         if (!this->ackMList[i])
             return 0;
-    }if(mainData.requestQueue[0].second == mainData.rank){
+    }
+    if(mainData.requestQueue[0].second == mainData.rank){
         // usuwa własne żądanie
         mainData.requestQueue.erase(mainData.requestQueue.begin());
+        println("OWN REQUEST DELETED")
         return 1;
     }else return 0;
 }
@@ -191,7 +193,7 @@ void Data::lookForMechanic() {
                 packet->mechanics = mechanics;
 
                 int targetRank = mainData.requestQueue[0].second;
-                if (DEBUG) println("send ACK_M(time = %d, docking = %d, mechanics = %d) to rank = %d", packet->lamportTime, packet->docking, packet->mechanics, targetRank);
+                if (DEBUG) println("[REQUEST QUEUE] send ACK_M(time = %d, docking = %d, mechanics = %d) to rank = %d", packet->lamportTime, packet->docking, packet->mechanics, targetRank);
                 MPI_Send(packet, 1, MPI_PACKET_T, targetRank, Message::ACK_M, MPI_COMM_WORLD);
             }
             mainData.requestQueue.clear();

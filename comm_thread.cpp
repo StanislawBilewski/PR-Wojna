@@ -164,6 +164,8 @@ void *comLoop(void *ptr) {
                 mainData.shipMechanics[status.MPI_SOURCE] = packet.mechanics;
                 unlockMutex();
 
+                 mainData.lookForMechanic();
+
                 break;
 
             case Message::RELEASE_M:
@@ -176,8 +178,8 @@ void *comLoop(void *ptr) {
 
 
                 if(state == State::WAITING_MECHANIC){
-                    mainData.lookForMechanic();
                     unlockMutex();
+                    mainData.lookForMechanic();
                 }
                 else{
                     unlockMutex();

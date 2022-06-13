@@ -108,8 +108,11 @@ void *comLoop(void *ptr) {
 
             case Message::REQ_M:
                 if (DEBUG) println("receive REQ_M(time = %d, mechanics = %d, docking = %d) from rank = %d", packet.lamportTime, packet.mechanics, packet.docking, status.MPI_SOURCE);
-                
+            
                 lockMutex();
+                if(status.MPI_SOURCE == mainData.rank){
+                    println("FOR SOME KNOWN ONLY TO GOD REASON I RECEIVED REQUEST FROM MY BLOODY SELF");
+                }
                 state = mainData.state;
                 ack = 0;
 

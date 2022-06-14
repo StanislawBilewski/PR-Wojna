@@ -6,12 +6,11 @@
 
 #define HIT_PROB 15    			// prawdopodobieństwo bycia trafionym
 #define WAITING_TIME 1          // liczba sekund spędzonych w jednym stanie
-#define REPAIR_TIME 50          // repair time multiplier
+#define REPAIR_TIME 10          // repair time multiplier
 
                                 // ostateczny wzór na czas naprawy to:
-                                // REPAIR_TIME/$mechanics * WAITING_TIME * (1 + $dmg/25)
+                                // REPAIR_TIME * WAITING_TIME * (1 + $dmg/25)
                                 // gdzie:
-                                // $mechanics to liczba przydzielonych mechaników
                                 // $dmg to liczba otrzymanych punktów obrażeń
 
 // #define MAX_HP 100     			// maksymalna liczba punktów życia statku (nieużywane)

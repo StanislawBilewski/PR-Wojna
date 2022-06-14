@@ -98,7 +98,7 @@ void checkState(){
             int mechanics;
             
             lockMutex();
-                sleep(REPAIR_TIME/mechanics * WAITING_TIME * (1 + mainData.dmg/25));
+                sleep(REPAIR_TIME * WAITING_TIME * (1 + mainData.dmg/25));
 
                 // zmiana stanu statku
                 mainData.state = State::FIGHTING;

@@ -36,7 +36,7 @@ bool Data::lookForDock() {
         unlockMutex();
         return false;
     }
-    if (isAckDFromAll() && checkDocks()) {
+    if (checkDocks() && isAckDFromAll()) {
         mainData.shipDocks[mainData.rank] = 1;
         int lamportTime;
         unlockMutex();
@@ -128,7 +128,7 @@ bool Data::lookForDock() {
 }
 
 int Data::sumMechanics() {
-    int sum;
+    int sum = 0;
     for (int i = 0; i < this->shipMechanics.size(); i++){
         sum += shipMechanics[i];
     }
@@ -185,8 +185,8 @@ bool Data::lookForMechanic() {
         return false;
     }
     int mechanics = mechanicsNeeded();
-    if (isAckMFromAll()) {
-        if(checkMechanics(mechanics)){
+    if(checkMechanics(mechanics)){
+        if (isAckMFromAll()) {
             println("I RECEIVED %d MECHANICS", mechanics);
             mainData.shipMechanics[mainData.rank] = mechanics;
             int lamportTime;

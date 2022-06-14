@@ -211,7 +211,10 @@ void *comLoop(void *ptr) {
 }
 
 bool checkPriority(int time){
-    sort(mainData.requestQueue.begin(), mainData.requestQueue.end());
+    std::sort(mainData.requestQueue.begin(), mainData.requestQueue.end());
+    for(auto i : mainData.requestQueue){
+        println("[QUEUE SORT] t = %d, r = %d", i.first, i.second);
+    }
     if(mainData.requestQueue[0].first > time){
         return 1;
     }else return 0;

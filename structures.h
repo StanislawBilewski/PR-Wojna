@@ -56,8 +56,8 @@ public:
     int sumMechanics();
     bool checkMechanics(int);
     int mechanicsNeeded();
-    void lookForDock();
-    void lookForMechanic();
+    bool lookForDock();
+    bool lookForMechanic();
 };
 
 #endif

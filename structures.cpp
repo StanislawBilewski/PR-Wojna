@@ -30,11 +30,11 @@ bool Data::isAckDFromAll() {
     }else return 0;
 }
 
-void Data::lookForDock() {
+bool Data::lookForDock() {
     lockMutex();
     if(mainData.state != State::WAITING_DOCK){
         unlockMutex();
-        return;
+        return false;
     }
     if (isAckDFromAll() && checkDocks()) {
         mainData.shipDocks[mainData.rank] = 1;
@@ -119,9 +119,11 @@ void Data::lookForDock() {
         // free(packet);
 
         checkState();
+        return true;
 
     } else {
-         unlockMutex();
+        unlockMutex();
+        return false;
     }
 }
 
@@ -176,11 +178,11 @@ bool Data::isAckMFromAll() {
     }else return 0;
 }
 
-void Data::lookForMechanic() {
+bool Data::lookForMechanic() {
     lockMutex();
     if(mainData.state != State::WAITING_MECHANIC){
         unlockMutex();
-        return;
+        return false;
     }
     int mechanics = mechanicsNeeded();
     if (isAckMFromAll()) {
@@ -219,11 +221,15 @@ void Data::lookForMechanic() {
             free(packet);
 
             checkState();
+
+            return true;
         }else{
             unlockMutex();
+            return false;
         }
     } else {
         unlockMutex();
+        return false;
     }
 }
 

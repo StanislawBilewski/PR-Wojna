@@ -76,13 +76,17 @@ void checkState(){
 
         case State::WAITING_DOCK:
             sleep(WAITING_TIME);
-            mainData.lookForDock();
+            if(!mainData.lookForDock()) condVarWait();
+
+            checkState();
 
             break;
 
         case State::WAITING_MECHANIC:
             sleep(WAITING_TIME);
-            mainData.lookForMechanic();
+            if(!mainData.lookForMechanic()) condVarWait();
+
+            checkState();
 
             break;
 

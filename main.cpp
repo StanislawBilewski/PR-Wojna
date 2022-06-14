@@ -8,8 +8,18 @@ MPI_Datatype MPI_PACKET_T;
 
 Data mainData;
 
+pthread_cond_t cv = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t condMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t stateMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_t commThread;
+
+int condVarWait() {
+    return pthread_cond_wait(&cv, &condMutex); 
+}
+
+int condVarNotify() {
+    return pthread_cond_signal(&cv);
+}
 
 void lockMutex() {
     pthread_mutex_lock(&stateMutex);

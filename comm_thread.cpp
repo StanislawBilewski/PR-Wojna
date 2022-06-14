@@ -83,7 +83,7 @@ void *comLoop(void *ptr) {
                 mainData.ackDList[status.MPI_SOURCE] = 1;
                 if(mainData.state == State::WAITING_DOCK){
                     unlockMutex();
-                    mainData.lookForDock();
+                    condVarNotify();
                 }
                 else unlockMutex();
 
@@ -100,7 +100,7 @@ void *comLoop(void *ptr) {
                 mainData.shipDocks[status.MPI_SOURCE] = 0;
                 if(mainData.state == State::WAITING_DOCK){
                     unlockMutex();
-                    mainData.lookForDock();
+                    condVarNotify();
                 }
                 else unlockMutex();
 
@@ -175,7 +175,7 @@ void *comLoop(void *ptr) {
 
                 if(state == State::WAITING_MECHANIC){
                     unlockMutex();
-                    mainData.lookForMechanic();
+                    condVarNotify();
                 }
                 else{
                     unlockMutex();
@@ -195,7 +195,7 @@ void *comLoop(void *ptr) {
 
                 if(state == State::WAITING_MECHANIC){
                     unlockMutex();
-                    mainData.lookForMechanic();
+                    condVarNotify();
                 }
                 else{
                     unlockMutex();

@@ -20,6 +20,9 @@ extern MPI_Datatype MPI_PACKET_T;
 
 void incLamportTime(int received);
 
+int condVarWait();
+int condVarNotify();
+
 void lockMutex();
 void unlockMutex();
 

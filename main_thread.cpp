@@ -16,7 +16,7 @@ void checkState(){
             int perc;
             perc = rand() % 100;
             if (perc < HIT_PROB) {
-                int lamportTime;
+                int lamportTime = 0;
 
                 // statek otrzymuje losowe obrażenia
                 int dmg = (rand() % (MAX_DMG - MIN_DMG + 1)) + MIN_DMG;
@@ -24,6 +24,8 @@ void checkState(){
                 println("I've been hit for %d points of damage!", dmg);
 
                 lockMutex();
+                    lamportTime = mainData.lamportTime;
+                    
                     mainData.dmg = dmg;
                     // zmiana stanu statku
                     mainData.state = State::WAITING_DOCK;
@@ -36,7 +38,7 @@ void checkState(){
                     mainData.shipDocks.resize(mainData.size, 0);
 
                     // zapisuje żądanie w kolejce
-                    mainData.requestQueue.emplace_back(make_pair(lamportTime,mainData.rank));
+                    mainData.requestQueue.emplace_back(make_pair(lamportTime, mainData.rank));
                 unlockMutex();
 
                 // wysyła REQ_D do wszystkich (poza samym sobą)

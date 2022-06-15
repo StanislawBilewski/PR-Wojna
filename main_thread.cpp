@@ -34,6 +34,10 @@ void checkState(){
                     mainData.ackDList.clear();
                     mainData.ackDList.resize(mainData.size, 0);
                     mainData.ackDList[mainData.rank] = 1;
+                    
+                    // for(auto i : mainData.ackDList){
+                    //     println("[ACK D LIST] ack = %d", (int) i);
+                    // }
 
                     // zerowanie listy zajmowanych doków
                     mainData.shipDocks.resize(mainData.size, 0);
@@ -79,7 +83,7 @@ void checkState(){
             break;
 
         case State::WAITING_DOCK:
-            sleep(WAITING_TIME);
+            // sleep(WAITING_TIME);
             if(!mainData.lookForDock()) condVarWait();
 
             checkState();
@@ -87,7 +91,7 @@ void checkState(){
             break;
 
         case State::WAITING_MECHANIC:
-            sleep(WAITING_TIME);
+            // sleep(WAITING_TIME);
             if(!mainData.lookForMechanic()) condVarWait();
 
             checkState();

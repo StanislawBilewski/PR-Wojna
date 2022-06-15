@@ -36,7 +36,7 @@ void *comLoop(void *ptr) {
                         ack = 1;
                     }
                     else {
-                        if(checkPriority(packet.lamportTime)){
+                        if(checkPriority(packet.lamportTime, status.MPI_SOURCE)){
                             ack = 1;
                         }
                     }
@@ -60,8 +60,7 @@ void *comLoop(void *ptr) {
                     response.mechanics = takenMechanics;
 
                     // wysłanie ACK
-                    // if (DEBUG) 
-                        println("send ACK_D(time = %d) to rank = %d", response.lamportTime, status.MPI_SOURCE);
+                    if (DEBUG) println("send ACK_D(time = %d) to rank = %d", response.lamportTime, status.MPI_SOURCE);
                     MPI_Send(&response, 1, MPI_PACKET_T, status.MPI_SOURCE, Message::ACK_D, MPI_COMM_WORLD);
                 }
                 else{
@@ -70,9 +69,9 @@ void *comLoop(void *ptr) {
                     mainData.requestQueue.push_back(make_pair(packet.lamportTime, status.MPI_SOURCE));
                     
                     // if(DEBUG) 
-                    for(std::pair<int, int> i : mainData.requestQueue){
-                        println("[QUEUE] t = %d, r = %d", i.first, i.second);
-                    }
+                    // for(std::pair<int, int> i : mainData.requestQueue){
+                    //     println("[QUEUE] t = %d, r = %d", i.first, i.second);
+                    // }
                     unlockMutex();
                 }
 
@@ -121,12 +120,10 @@ void *comLoop(void *ptr) {
                 break;
 
             case Message::REQ_M:
-                if (DEBUG) println("receive REQ_M(time = %d, mechanics = %d, docking = %d) from rank = %d", packet.lamportTime, packet.mechanics, packet.docking, status.MPI_SOURCE);
+                if (DEBUG) 
+                println("receive REQ_M(time = %d, mechanics = %d, docking = %d) from rank = %d", packet.lamportTime, packet.mechanics, packet.docking, status.MPI_SOURCE);
             
                 lockMutex();
-                if(status.MPI_SOURCE == mainData.rank){
-                    
-                }
                 state = mainData.state;
                 ack = 0;
 
@@ -138,7 +135,7 @@ void *comLoop(void *ptr) {
                     ack = 1;
                 }
                 else {
-                    if(checkPriority(packet.lamportTime)){
+                    if(checkPriority(packet.lamportTime, status.MPI_SOURCE)){
                         ack = 1;
                     }
                 }
@@ -167,6 +164,7 @@ void *comLoop(void *ptr) {
                 else{
                     // zapisuje żądanie w kolejce
                     lockMutex();
+                    // println("[QUEUE] Zapisałem");
                     mainData.requestQueue.push_back(make_pair(packet.lamportTime, status.MPI_SOURCE));
                     unlockMutex();
                 }
@@ -174,7 +172,8 @@ void *comLoop(void *ptr) {
                 break;
 
             case Message::ACK_M:
-                if (DEBUG) println("receive ACK_M(time = %d, mechanics = %d, docking = %d) from rank = %d", packet.lamportTime, packet.mechanics, packet.docking, status.MPI_SOURCE);
+                if (DEBUG) 
+                println("receive ACK_M(time = %d, mechanics = %d, docking = %d) from rank = %d", packet.lamportTime, packet.mechanics, packet.docking, status.MPI_SOURCE);
 
                 lockMutex();
                 state = mainData.state;
@@ -224,16 +223,19 @@ void *comLoop(void *ptr) {
     }
 }
 
-bool checkPriority(int time){
+bool checkPriority(int time, int rank){
     std::sort(mainData.requestQueue.begin(), mainData.requestQueue.end());
-    int ourTime = 0;
+    int ourTime = 99999999;
     for(auto i : mainData.requestQueue){
         if (i.second == mainData.rank){
             ourTime = i.first;
         }
     }
 
+    // println("[CHECK PRIORITY] ourTime = %d, time = %d", ourTime, time);
     if(ourTime > time){
+        return 1;
+    }else if(ourTime == time && mainData.rank > rank){
         return 1;
     }else return 0;
 }

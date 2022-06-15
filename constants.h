@@ -1,7 +1,7 @@
 #ifndef CONSTANTSH
 #define CONSTANTSH
 
-#define DOCKS 1               	// liczba doków
+#define DOCKS 2               	// liczba doków
 #define MECHANICS 5           	// liczba mechaników
 
 #define HIT_PROB 15    			// prawdopodobieństwo bycia trafionym

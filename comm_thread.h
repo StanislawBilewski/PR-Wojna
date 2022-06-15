@@ -9,6 +9,6 @@
 #include <algorithm>
 
 void *comLoop(void *ptr);
-bool checkPriority(int);
+bool checkPriority(int, int);
 
 #endif

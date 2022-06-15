@@ -4,7 +4,7 @@
 #include "structures.h"
 
 void mainLoop() {
-    if (DEBUG) println("Hello");
+    println("Hello");
     mainData.shipDocks.resize(mainData.size, 0);
     checkState();
 }
@@ -16,14 +16,14 @@ void checkState(){
             int perc;
             perc = rand() % 100;
             if (perc < HIT_PROB) {
-                int lamportTime = 0;
-
-                // statek otrzymuje losowe obrażenia
-                int dmg = (rand() % (MAX_DMG - MIN_DMG + 1)) + MIN_DMG;
-
-                println("I've been hit for %d points of damage!", dmg);
-
                 lockMutex();
+                    int lamportTime = 0;
+
+                    // statek otrzymuje losowe obrażenia
+                    int dmg = (rand() % (MAX_DMG - MIN_DMG + 1)) + MIN_DMG;
+
+                    println("I've been hit for %d points of damage!", dmg);
+
                     lamportTime = mainData.lamportTime;
                     
                     mainData.dmg = dmg;
@@ -31,14 +31,13 @@ void checkState(){
                     mainData.state = State::WAITING_DOCK;
 
                     // zerowanie listy ACK_D
+                    mainData.ackDList.clear();
                     mainData.ackDList.resize(mainData.size, 0);
                     mainData.ackDList[mainData.rank] = 1;
 
                     // zerowanie listy zajmowanych doków
                     mainData.shipDocks.resize(mainData.size, 0);
 
-                    // zapisuje żądanie w kolejce
-                    mainData.requestQueue.emplace_back(make_pair(lamportTime, mainData.rank));
                 unlockMutex();
 
                 // wysyła REQ_D do wszystkich (poza samym sobą)
@@ -47,16 +46,19 @@ void checkState(){
                 println("I want to dock");
                 if (DEBUG) println("send REQ_D to ALL");
 
+                lockMutex();
+                // inkrementacja wartości zegaru lamporta (przed wysyłaniem)
+
+                incLamportTime(LAMPORT_DEF);
+                lamportTime = mainData.lamportTime;
+
+                // zapisuje żądanie w kolejce
+                mainData.requestQueue.emplace_back(make_pair(lamportTime, mainData.rank));
+
+                unlockMutex();
+
                 for (int i = 0; i < mainData.size; i++) {
-                    lockMutex();
                     if (i != mainData.rank){
-
-                        // inkrementacja wartości zegaru lamporta (przed wysyłaniem)
-
-                        incLamportTime(LAMPORT_DEF);
-                        lamportTime = mainData.lamportTime;
-
-                        unlockMutex();
 
                         packet->lamportTime = lamportTime;
                         packet->mechanics = 0;

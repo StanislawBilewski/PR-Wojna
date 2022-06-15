@@ -1,12 +1,12 @@
 #ifndef CONSTANTSH
 #define CONSTANTSH
 
-#define DOCKS 2               	// liczba doków
+#define DOCKS 1               	// liczba doków
 #define MECHANICS 5           	// liczba mechaników
 
 #define HIT_PROB 15    			// prawdopodobieństwo bycia trafionym
 #define WAITING_TIME 1          // liczba sekund spędzonych w jednym stanie
-#define REPAIR_TIME 10          // repair time multiplier
+#define REPAIR_TIME 2          // repair time multiplier
 
                                 // ostateczny wzór na czas naprawy to:
                                 // REPAIR_TIME * WAITING_TIME * (1 + $dmg/25)
@@ -23,6 +23,6 @@
 #endif
 
 #ifndef DEBUG
-#define DEBUG true
+#define DEBUG false
 
 #endif

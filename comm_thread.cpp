@@ -60,13 +60,19 @@ void *comLoop(void *ptr) {
                     response.mechanics = takenMechanics;
 
                     // wysłanie ACK
-                    if (DEBUG) println("send ACK_D(time = %d) to rank = %d", response.lamportTime, status.MPI_SOURCE);
+                    // if (DEBUG) 
+                        println("send ACK_D(time = %d) to rank = %d", response.lamportTime, status.MPI_SOURCE);
                     MPI_Send(&response, 1, MPI_PACKET_T, status.MPI_SOURCE, Message::ACK_D, MPI_COMM_WORLD);
                 }
                 else{
                     // zapisuje żądanie w kolejce
                     lockMutex();
                     mainData.requestQueue.push_back(make_pair(packet.lamportTime, status.MPI_SOURCE));
+                    
+                    // if(DEBUG) 
+                    for(std::pair<int, int> i : mainData.requestQueue){
+                        println("[QUEUE] t = %d, r = %d", i.first, i.second);
+                    }
                     unlockMutex();
                 }
 
@@ -93,6 +99,14 @@ void *comLoop(void *ptr) {
                 if (DEBUG) println("receive RELEASE_D(time = %d, mechanics = %d, docking = %d) from rank = %d", packet.lamportTime, packet.mechanics, packet.docking, status.MPI_SOURCE);
                 
                 lockMutex();
+                for(int i = 0; i < mainData.requestQueue.size();){
+                    if (mainData.requestQueue[i].second == status.MPI_SOURCE){
+                        mainData.requestQueue.erase(mainData.requestQueue.begin() + i);
+                    }
+                    else{
+                        i++;
+                    }
+                }
                 state = mainData.state;
                 // aktualizacja zegara lamporta
                 incLamportTime(packet.lamportTime);
@@ -212,10 +226,14 @@ void *comLoop(void *ptr) {
 
 bool checkPriority(int time){
     std::sort(mainData.requestQueue.begin(), mainData.requestQueue.end());
-    for(std::pair<int, int> i : mainData.requestQueue){
-        if (DEBUG) println("[QUEUE SORT] t = %d, r = %d", i.first, i.second);
+    int ourTime = 0;
+    for(auto i : mainData.requestQueue){
+        if (i.second == mainData.rank){
+            ourTime = i.first;
+        }
     }
-    if(mainData.requestQueue[0].first > time){
+
+    if(ourTime > time){
         return 1;
     }else return 0;
 }

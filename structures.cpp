@@ -9,7 +9,7 @@ void Data::init(int rank, int size) {
     this->state = State::FIGHTING;
     this->rank = rank;
     this->size = size;
-    this->lamportTime = LAMPORT_DEF;
+    this->lamportTime = LAMPORT_DEF + rank;
     this->ackDList.resize(size, 0);
     this->ackMList.resize(size, 0);
     this->shipDocks.resize(size, 0);
@@ -37,90 +37,100 @@ bool Data::lookForDock() {
         return false;
     }
     if (checkDocks() && isAckDFromAll()) {
-        mainData.shipDocks[mainData.rank] = 1;
-        int lamportTime;
-        unlockMutex();
+        if(checkDocks()){
 
-        packet_t *packet = (packet_t*)malloc(sizeof(packet_t));
+            // for(auto i : this->ackDList){
+            //     println("[ACK D LIST] ack = %d", (int) i);
+            // }
+            mainData.shipDocks[mainData.rank] = 1;
+            int lamportTime;
+            unlockMutex();
 
-        lockMutex();
+            packet_t *packet = (packet_t*)malloc(sizeof(packet_t));
 
-        for (auto request : mainData.requestQueue){
-            // inkrementacja zegara lamporta
-            incLamportTime(LAMPORT_DEF);
-            lamportTime = mainData.lamportTime;
+            lockMutex();
 
-            // wysyłanie ACK_D do oczekujących procesów
-            packet->lamportTime = lamportTime;
-            packet->docking = 1;
-            packet->mechanics = 0;
-
-            int targetRank = mainData.requestQueue[0].second;
-            if (DEBUG) println("[REQUEST QUEUE] send ACK_D(time = %d) to rank = %d", packet->lamportTime, targetRank);
-            MPI_Send(packet, 1, MPI_PACKET_T, targetRank, Message::ACK_D, MPI_COMM_WORLD);
-        }
-        mainData.requestQueue.clear();
-
-        // while(mainData.requestQueue.size() > 0) {
-        //     // inkrementacja zegara lamporta
-        //     incLamportTime(LAMPORT_DEF);
-        //     lamportTime = mainData.lamportTime;
-
-        //     // wysyłanie ACK_D do oczekujących procesów
-        //     packet->lamportTime = lamportTime;
-        //     packet->docking = 1;
-        //     packet->mechanics = 0;
-
-        //     int targetRank = mainData.requestQueue[0].second;
-        //     if (DEBUG) println("send ACK_D(time = %d) to rank = %d", packet->lamportTime, targetRank);
-        //     MPI_Send(packet, 1, MPI_PACKET_T, targetRank, Message::ACK_D, MPI_COMM_WORLD);
-        //     mainData.requestQueue.erase(mainData.requestQueue.begin());
-        // }
-
-        println("I'M DOCKING!");
-
-        // zmiana stanu statku
-        mainData.state = State::WAITING_MECHANIC;
-
-        // zerowanie listy zajętych mechaników
-        mainData.shipMechanics.resize(mainData.size, 0);
-
-        // zerowanie listy ACK_M
-        mainData.ackMList.resize(mainData.size, 0);
-        mainData.ackMList[mainData.rank] = 1;
-
-        // zapisuje żądanie w kolejce
-        mainData.requestQueue.emplace_back(make_pair(lamportTime,mainData.rank));
-        unlockMutex();
-
-        // wysyła REQ_M do wszystkich (poza samym sobą)
-        if (DEBUG) println("send REQ_M to ALL");
-        lockMutex();
-        for (int i = 0; i < mainData.size; i++) {
-            if (i != mainData.rank){
+            for (auto request : mainData.requestQueue){
                 // inkrementacja zegara lamporta
                 incLamportTime(LAMPORT_DEF);
                 lamportTime = mainData.lamportTime;
-                unlockMutex();
 
+                // wysyłanie ACK_D do oczekujących procesów
                 packet->lamportTime = lamportTime;
                 packet->docking = 1;
                 packet->mechanics = 0;
-                
-                if (DEBUG) println("[REQ_M] send REQ_M (time = %d, mechanics = %d, docking = %d) to rank = %d", packet->lamportTime, packet->mechanics, packet->docking, i);
-                MPI_Send(packet, 1, MPI_PACKET_T, i, Message::REQ_M, MPI_COMM_WORLD);
 
-                lockMutex();
+                int targetRank = mainData.requestQueue[0].second;
+                if (DEBUG) println("[REQUEST QUEUE] send ACK_D(time = %d) to rank = %d", packet->lamportTime, targetRank);
+                MPI_Send(packet, 1, MPI_PACKET_T, targetRank, Message::ACK_D, MPI_COMM_WORLD);
             }
+            mainData.requestQueue.clear();
+
+            // while(mainData.requestQueue.size() > 0) {
+            //     // inkrementacja zegara lamporta
+            //     incLamportTime(LAMPORT_DEF);
+            //     lamportTime = mainData.lamportTime;
+
+            //     // wysyłanie ACK_D do oczekujących procesów
+            //     packet->lamportTime = lamportTime;
+            //     packet->docking = 1;
+            //     packet->mechanics = 0;
+
+            //     int targetRank = mainData.requestQueue[0].second;
+            //     if (DEBUG) println("send ACK_D(time = %d) to rank = %d", packet->lamportTime, targetRank);
+            //     MPI_Send(packet, 1, MPI_PACKET_T, targetRank, Message::ACK_D, MPI_COMM_WORLD);
+            //     mainData.requestQueue.erase(mainData.requestQueue.begin());
+            // }
+
+            println("I'M DOCKING!");
+
+            // zmiana stanu statku
+            mainData.state = State::WAITING_MECHANIC;
+
+            // zerowanie listy zajętych mechaników
+            mainData.shipMechanics.resize(mainData.size, 0);
+
+            // zerowanie listy ACK_M
+            mainData.ackMList.resize(mainData.size, 0);
+            mainData.ackMList[mainData.rank] = 1;
+
+            // zapisuje żądanie w kolejce
+            mainData.requestQueue.emplace_back(make_pair(lamportTime,mainData.rank));
+            unlockMutex();
+
+            // wysyła REQ_M do wszystkich (poza samym sobą)
+            if (DEBUG) println("send REQ_M to ALL");
+            lockMutex();
+            for (int i = 0; i < mainData.size; i++) {
+                if (i != mainData.rank){
+                    // inkrementacja zegara lamporta
+                    incLamportTime(LAMPORT_DEF);
+                    lamportTime = mainData.lamportTime;
+                    unlockMutex();
+
+                    packet->lamportTime = lamportTime;
+                    packet->docking = 1;
+                    packet->mechanics = 0;
+                    
+                    if (DEBUG) println("[REQ_M] send REQ_M (time = %d, mechanics = %d, docking = %d) to rank = %d", packet->lamportTime, packet->mechanics, packet->docking, i);
+                    MPI_Send(packet, 1, MPI_PACKET_T, i, Message::REQ_M, MPI_COMM_WORLD);
+
+                    lockMutex();
+                }
+            }
+            unlockMutex();
+
+            free(packet);
+            // free(packet);
+
+            // checkState();
+            return true;
+
         }
-        unlockMutex();
-
-        free(packet);
-        // free(packet);
-
-        checkState();
-        return true;
-
+        else{
+            unlockMutex();
+            return false;
+        }
     } else {
         unlockMutex();
         return false;
@@ -220,7 +230,7 @@ bool Data::lookForMechanic() {
 
             free(packet);
 
-            checkState();
+            // checkState();
 
             return true;
         }else{

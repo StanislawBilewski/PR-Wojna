@@ -25,7 +25,7 @@ bool Data::isAckDFromAll() {
     if(mainData.requestQueue[0].second == mainData.rank){
         // usuwa własne żądanie
         mainData.requestQueue.erase(mainData.requestQueue.begin());
-        println("OWN REQ_D DELETED")
+        if (DEBUG) println("OWN REQ_D DELETED")
         return 1;
     }else return 0;
 }
@@ -173,7 +173,7 @@ bool Data::isAckMFromAll() {
     if(mainData.requestQueue[0].second == mainData.rank){
         // usuwa własne żądanie
         mainData.requestQueue.erase(mainData.requestQueue.begin());
-        println("OWN REQ_M DELETED")
+        if (DEBUG) println("OWN REQ_M DELETED")
         return 1;
     }else return 0;
 }

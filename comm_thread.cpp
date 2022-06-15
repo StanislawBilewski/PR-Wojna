@@ -111,7 +111,7 @@ void *comLoop(void *ptr) {
             
                 lockMutex();
                 if(status.MPI_SOURCE == mainData.rank){
-                    println("FOR SOME KNOWN ONLY TO GOD REASON I RECEIVED REQUEST FROM MY BLOODY SELF");
+                    
                 }
                 state = mainData.state;
                 ack = 0;
@@ -213,7 +213,7 @@ void *comLoop(void *ptr) {
 bool checkPriority(int time){
     std::sort(mainData.requestQueue.begin(), mainData.requestQueue.end());
     for(std::pair<int, int> i : mainData.requestQueue){
-        println("[QUEUE SORT] t = %d, r = %d", i.first, i.second);
+        if (DEBUG) println("[QUEUE SORT] t = %d, r = %d", i.first, i.second);
     }
     if(mainData.requestQueue[0].first > time){
         return 1;
